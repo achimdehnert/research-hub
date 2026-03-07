@@ -48,6 +48,11 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
             user=self.request.user, deleted_at__isnull=True
         ).prefetch_related("results")
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["latest_result"] = self.object.results.order_by("-id").first()
+        return ctx
+
 
 def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     """HTMX polling endpoint for project status."""

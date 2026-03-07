@@ -44,7 +44,8 @@
   </div>
 </div>
 
-{% for result in project.results.all %}
+{% with result=latest_result %}
+{% if result %}
 <div class="mb-4">
 
   {% if result.summary %}
@@ -131,7 +132,7 @@
   </div>
 </div>
 
-{% empty %}
+{% else %}
   {% if project.status == 'running' %}
   <div class="card" style="border-color:#1e3a5f">
     <div class="card-body py-5 text-center">
@@ -152,6 +153,7 @@
     </div>
   </div>
   {% endif %}
-{% endfor %}
+{% endif %}
+{% endwith %}
 
 {% endblock %}
