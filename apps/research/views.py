@@ -10,80 +10,12 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
-from apps.research.forms import ResearchProjectForm, WorkspaceForm
-from apps.research.models import ResearchProject, ResearchResult, Workspace
+from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm
+from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
 from apps.research.tasks import run_research_task
 
 
-class ResearchProjectListView(LoginRequiredMixin, ListView):
-    model = ResearchProject
-    template_name = "research/project_list.html"
-    context_object_name = "projects"
-
-    def get_queryset(self):
-        return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
-
-
-class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
-    model = ResearchProject
-    form_class = ResearchProjectForm
-    template_name = "research/project_form.html"
-    success_url = reverse_lazy("research:project-list")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ws_id = self.request.GET.get("workspace")
-        if ws_id:
-            try:
-                ctx["workspace"] = Workspace.objects.get(
-                    public_id=ws_id, user=self.request.user
-                )
-            except Workspace.DoesNotExist:
-                pass
-        return ctx
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        ws_id = self.request.POST.get("workspace_id")
-        if ws_id:
-            try:
-                form.instance.workspace = Workspace.objects.get(
-                    public_id=ws_id, user=self.request.user
-                )
-            except Workspace.DoesNotExist:
-                pass
-        response = super().form_valid(form)
-        run_research_task.delay(self.object.pk)
-        return response
-
-
-class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
-    model = ResearchProject
-    template_name = "research/project_detail.html"
-    context_object_name = "project"
-    slug_field = "public_id"
-    slug_url_kwarg = "public_id"
-
-    def get_queryset(self):
-        return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        ).prefetch_related("results")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["latest_result"] = self.object.results.order_by("-id").first()
-        ctx["reformat_formats"] = [
-            ("structured", "Strukturiert", "layout-text-sidebar"),
-            ("bullets", "Stichpunkte", "list-ul"),
-            ("compact", "Kompakt", "text-paragraph"),
-            ("narrative", "Fließtext", "file-text"),
-            ("academic", "Abstract", "journal-text"),
-            ("qa", "FAQ", "question-circle"),
-        ]
-        return ctx
-
+# ── Workspace views ────────────────────────────────────────────────────────────
 
 class WorkspaceListView(LoginRequiredMixin, ListView):
     model = Workspace
@@ -127,33 +59,161 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
+# ── Project views ──────────────────────────────────────────────────────────────
+
+class ProjectCreateView(LoginRequiredMixin, CreateView):
+    model = Project
+    form_class = ProjectForm
+    template_name = "research/project_form.html"
+
+    def _get_workspace(self):
+        return get_object_or_404(
+            Workspace,
+            public_id=self.kwargs["workspace_id"],
+            user=self.request.user,
+            deleted_at__isnull=True,
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["workspace"] = self._get_workspace()
+        return ctx
+
+    def form_valid(self, form):
+        ws = self._get_workspace()
+        form.instance.user = self.request.user
+        form.instance.workspace = ws
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.workspace.get_absolute_url()
+
+
+class ProjectDetailView(LoginRequiredMixin, DetailView):
+    model = Project
+    template_name = "research/project_detail.html"
+    context_object_name = "project"
+    slug_field = "public_id"
+    slug_url_kwarg = "project_id"
+
+    def get_queryset(self):
+        return Project.objects.filter(
+            user=self.request.user, deleted_at__isnull=True
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["workspace"] = self.object.workspace
+        ctx["researches"] = self.object.researches.filter(
+            deleted_at__isnull=True
+        ).order_by("-created_at")
+        return ctx
+
+
+# ── ResearchProject (Recherche) views ──────────────────────────────────────────
+
+class ResearchProjectListView(LoginRequiredMixin, ListView):
+    model = ResearchProject
+    template_name = "research/research_list.html"
+    context_object_name = "researches"
+
+    def get_queryset(self):
+        return ResearchProject.objects.filter(
+            user=self.request.user, deleted_at__isnull=True
+        )
+
+
+class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
+    model = ResearchProject
+    form_class = ResearchProjectForm
+    template_name = "research/research_form.html"
+    success_url = reverse_lazy("research:workspace-list")
+
+    def _get_project(self):
+        project_id = self.request.GET.get("project") or self.request.POST.get("project_id")
+        if project_id:
+            try:
+                return Project.objects.get(public_id=project_id, user=self.request.user)
+            except Project.DoesNotExist:
+                pass
+        return None
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        project = self._get_project()
+        if project:
+            ctx["project"] = project
+            ctx["workspace"] = project.workspace
+        return ctx
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        project = self._get_project()
+        if project:
+            form.instance.project = project
+            form.instance.workspace = project.workspace
+        response = super().form_valid(form)
+        run_research_task.delay(self.object.pk)
+        return response
+
+    def get_success_url(self):
+        if self.object.project:
+            return self.object.project.get_absolute_url()
+        return reverse_lazy("research:workspace-list")
+
+
+class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
+    model = ResearchProject
+    template_name = "research/research_detail.html"
+    context_object_name = "research"
+    slug_field = "public_id"
+    slug_url_kwarg = "public_id"
+
+    def get_queryset(self):
+        return ResearchProject.objects.filter(
+            user=self.request.user, deleted_at__isnull=True
+        ).prefetch_related("results")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["latest_result"] = self.object.results.order_by("-id").first()
+        ctx["project"] = self.object.project
+        ctx["workspace"] = self.object.workspace or (
+            self.object.project.workspace if self.object.project else None
+        )
+        ctx["reformat_formats"] = [
+            ("structured", "Strukturiert", "layout-text-sidebar"),
+            ("bullets", "Stichpunkte", "list-ul"),
+            ("compact", "Kompakt", "text-paragraph"),
+            ("narrative", "Fließtext", "file-text"),
+            ("academic", "Abstract", "journal-text"),
+            ("qa", "FAQ", "question-circle"),
+        ]
+        return ctx
+
+
 def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
-    """HTMX polling endpoint for project status."""
-    project = get_object_or_404(
+    """HTMX polling endpoint for research status."""
+    research = get_object_or_404(
         ResearchProject, public_id=public_id, user=request.user
     )
     if request.headers.get("HX-Request") == "true":
         html = render_to_string(
-            "research/partials/project_status.html", {"project": project}
+            "research/partials/project_status.html", {"project": research}
         )
         return HttpResponse(html)
-    return redirect("research:project-detail", public_id=public_id)
+    return redirect("research:research-detail", public_id=public_id)
 
 
 def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
-    """HTMX endpoint: reformat existing summary into chosen display format.
-
-    POST params: target_format (compact|bullets|structured|narrative|academic|qa)
-    Returns: rendered partial with reformatted summary (no new LLM call for
-    simple formats; LLM-backed for complex transformations).
-    """
+    """HTMX endpoint: reformat existing summary."""
     if request.method != "POST" or request.headers.get("HX-Request") != "true":
         return HttpResponse(status=400)
 
-    project = get_object_or_404(
+    research = get_object_or_404(
         ResearchProject, public_id=public_id, user=request.user
     )
-    result = ResearchResult.objects.filter(project=project).order_by("-id").first()
+    result = ResearchResult.objects.filter(project=research).order_by("-id").first()
     if not result or not result.summary:
         return HttpResponse("<p class='text-muted'>Keine Zusammenfassung vorhanden.</p>")
 
@@ -167,7 +227,7 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         reformat_result = reformatter.reformat(ReformatTask(
             source_text=result.summary,
             target_format=target_format,
-            language=project.language or "de",
+            language=research.language or "de",
         ))
         reformatted_text = reformat_result.content
     except Exception:

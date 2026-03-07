@@ -8,7 +8,7 @@ from django.db import models
 
 
 class Workspace(models.Model):
-    """Top-level container: one Workspace holds multiple ResearchProjects."""
+    """Top-level container: one Workspace holds multiple Projects."""
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(
@@ -34,10 +34,47 @@ class Workspace(models.Model):
         return self.name
 
     def project_count(self) -> int:
-        return self.projects.filter(deleted_at__isnull=True).count()
+        return self.research_projects.filter(deleted_at__isnull=True).count()
+
+
+class Project(models.Model):
+    """Mid-level grouping: a Project belongs to a Workspace and holds Recherchen."""
+
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="projects",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_projects_owned",
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "name"], name="unique_workspace_project_name"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def research_count(self) -> int:
+        return self.researches.filter(deleted_at__isnull=True).count()
 
 
 class ResearchProject(models.Model):
+    """A single research run (Recherche) — belongs to a Project."""
+
     RESEARCH_TYPE_CHOICES = [
         ("web", "Web-Recherche"),
         ("academic", "Wissenschaftlich"),
@@ -75,12 +112,21 @@ class ResearchProject(models.Model):
         on_delete=models.CASCADE,
         related_name="research_projects",
     )
+    # New: project FK (nullable for backward compat with existing rows)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="researches",
+    )
+    # Legacy: direct workspace FK kept for data that predates Project layer
     workspace = models.ForeignKey(
         Workspace,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="projects",
+        related_name="research_projects",
     )
     name = models.CharField(max_length=255)
     query = models.TextField()
@@ -104,7 +150,12 @@ class ResearchProject(models.Model):
     )
     status = models.CharField(
         max_length=20,
-        choices=[("draft", "Draft"), ("running", "Running"), ("done", "Done"), ("error", "Error")],
+        choices=[
+            ("draft", "Draft"),
+            ("running", "Running"),
+            ("done", "Done"),
+            ("error", "Error"),
+        ],
         default="draft",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -114,7 +165,9 @@ class ResearchProject(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["user", "name"], name="unique_user_project_name"),
+            models.UniqueConstraint(
+                fields=["user", "name"], name="unique_user_project_name"
+            ),
         ]
 
     def __str__(self) -> str:

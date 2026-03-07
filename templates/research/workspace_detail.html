@@ -14,9 +14,9 @@
       {% endif %}
     </div>
   </div>
-  <a href="{% url 'research:project-create' %}?workspace={{ workspace.public_id }}"
+  <a href="{% url 'research:project-create' workspace_id=workspace.public_id %}"
      class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-circle me-1"></i>Neue Recherche
+    <i class="bi bi-plus-circle me-1"></i>Neues Projekt
   </a>
 </div>
 
@@ -24,51 +24,39 @@
 <div class="row g-3">
   {% for project in projects %}
   <div class="col-md-6 col-lg-4">
-    <div class="card h-100" style="border-color:#2d3148">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <h6 class="fw-semibold mb-0">{{ project.name }}</h6>
-          <span class="badge ms-2
-            {% if project.status == 'done' %}bg-success
-            {% elif project.status == 'running' %}bg-warning text-dark
-            {% elif project.status == 'error' %}bg-danger
-            {% else %}bg-secondary{% endif %}"
-            style="font-size:.7rem">{{ project.status }}</span>
+    <a href="{% url 'research:project-detail' project_id=project.public_id %}"
+       class="text-decoration-none">
+      <div class="card h-100" style="border-color:#2d3148;cursor:pointer;"
+           onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor='#2d3148'">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="fw-semibold mb-0 text-white">{{ project.name }}</h6>
+            <span class="badge" style="background:#1e2035;color:#94a3b8;font-size:.7rem">
+              {{ project.research_count }} Recherche{{ project.research_count|pluralize:"n" }}
+            </span>
+          </div>
+          {% if project.description %}
+          <p class="text-muted small mb-0">{{ project.description|truncatechars:80 }}</p>
+          {% endif %}
         </div>
-        <p class="text-muted small mb-2">{{ project.query|truncatechars:70 }}</p>
-        <div class="d-flex gap-1 flex-wrap mb-3">
-          <span class="badge" style="background:#1e2035;color:#94a3b8;font-size:.7rem">
-            {% if project.summary_level == 'simple' %}Einfach
-            {% elif project.summary_level == 'medium' %}Mittel
-            {% elif project.summary_level == 'complex' %}Komplex
-            {% elif project.summary_level == 'scientific' %}Wissenschaftlich
-            {% endif %}
-          </span>
-          <span class="badge" style="background:#1e2035;color:#94a3b8;font-size:.7rem">
-            {{ project.get_research_type_display }}
-          </span>
+        <div class="card-footer d-flex justify-content-between" style="background:transparent;border-color:#2d3148">
+          <small class="text-muted">
+            <i class="bi bi-clock me-1"></i>{{ project.created_at|date:"d.m.Y" }}
+          </small>
+          <small style="color:#6366f1"><i class="bi bi-arrow-right"></i></small>
         </div>
-        <a href="{% url 'research:project-detail' project.public_id %}"
-           class="btn btn-sm btn-outline-primary w-100">
-          <i class="bi bi-eye me-1"></i>Anzeigen
-        </a>
       </div>
-      <div class="card-footer" style="background:transparent;border-color:#2d3148">
-        <small class="text-muted">
-          <i class="bi bi-clock me-1"></i>{{ project.created_at|date:"d.m.Y H:i" }}
-        </small>
-      </div>
-    </div>
+    </a>
   </div>
   {% endfor %}
 </div>
 {% else %}
 <div class="text-center py-5">
-  <i class="bi bi-search" style="font-size:3rem;color:#2d3148"></i>
-  <p class="text-muted mt-3">Noch keine Recherchen in diesem Workspace.</p>
-  <a href="{% url 'research:project-create' %}?workspace={{ workspace.public_id }}"
+  <i class="bi bi-folder-plus" style="font-size:3rem;color:#2d3148"></i>
+  <p class="text-muted mt-3">Noch keine Projekte in diesem Workspace.</p>
+  <a href="{% url 'research:project-create' workspace_id=workspace.public_id %}"
      class="btn btn-primary mt-2">
-    <i class="bi bi-plus-circle me-1"></i>Erste Recherche starten
+    <i class="bi bi-plus-circle me-1"></i>Erstes Projekt erstellen
   </a>
 </div>
 {% endif %}
