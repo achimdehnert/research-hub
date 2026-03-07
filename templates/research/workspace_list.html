@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Workspaces{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold mb-0">Meine Workspaces</h2>
+  <a href="{% url 'research:workspace-create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Neuer Workspace
+  </a>
+</div>
+
+{% if workspaces %}
+<div class="row g-3">
+  {% for ws in workspaces %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100" style="border-color:#2d3148">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="card-title fw-bold mb-0">{{ ws.name }}</h5>
+          <span class="badge ms-2" style="background:#2d3148;color:#a5b4fc;font-size:.75rem">
+            {{ ws.project_count }} Recherche{{ ws.project_count|pluralize:"n" }}
+          </span>
+        </div>
+        {% if ws.description %}
+        <p class="card-text text-muted small mb-3">{{ ws.description|truncatechars:80 }}</p>
+        {% endif %}
+        <a href="{% url 'research:workspace-detail' ws.public_id %}"
+           class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-folder2-open me-1"></i>Öffnen
+        </a>
+      </div>
+      <div class="card-footer" style="background:transparent;border-color:#2d3148">
+        <small class="text-muted">
+          <i class="bi bi-clock me-1"></i>{{ ws.created_at|date:"d.m.Y" }}
+        </small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-folder-x" style="font-size:3rem;color:#2d3148"></i>
+  <p class="text-muted mt-3">Noch keine Workspaces vorhanden.</p>
+  <a href="{% url 'research:workspace-create' %}" class="btn btn-primary mt-2">
+    Ersten Workspace erstellen
+  </a>
+</div>
+{% endif %}
+{% endblock %}

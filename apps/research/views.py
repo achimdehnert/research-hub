@@ -10,8 +10,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
-from apps.research.forms import ResearchProjectForm
-from apps.research.models import ResearchProject, ResearchResult
+from apps.research.forms import ResearchProjectForm, WorkspaceForm
+from apps.research.models import ResearchProject, ResearchResult, Workspace
 from apps.research.tasks import run_research_task
 
 
@@ -32,8 +32,28 @@ class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
     template_name = "research/project_form.html"
     success_url = reverse_lazy("research:project-list")
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ws_id = self.request.GET.get("workspace")
+        if ws_id:
+            try:
+                ctx["workspace"] = Workspace.objects.get(
+                    public_id=ws_id, user=self.request.user
+                )
+            except Workspace.DoesNotExist:
+                pass
+        return ctx
+
     def form_valid(self, form):
         form.instance.user = self.request.user
+        ws_id = self.request.POST.get("workspace_id")
+        if ws_id:
+            try:
+                form.instance.workspace = Workspace.objects.get(
+                    public_id=ws_id, user=self.request.user
+                )
+            except Workspace.DoesNotExist:
+                pass
         response = super().form_valid(form)
         run_research_task.delay(self.object.pk)
         return response
@@ -62,6 +82,48 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
             ("academic", "Abstract", "journal-text"),
             ("qa", "FAQ", "question-circle"),
         ]
+        return ctx
+
+
+class WorkspaceListView(LoginRequiredMixin, ListView):
+    model = Workspace
+    template_name = "research/workspace_list.html"
+    context_object_name = "workspaces"
+
+    def get_queryset(self):
+        return Workspace.objects.filter(
+            user=self.request.user, deleted_at__isnull=True
+        ).prefetch_related("projects")
+
+
+class WorkspaceCreateView(LoginRequiredMixin, CreateView):
+    model = Workspace
+    form_class = WorkspaceForm
+    template_name = "research/workspace_form.html"
+    success_url = reverse_lazy("research:workspace-list")
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class WorkspaceDetailView(LoginRequiredMixin, DetailView):
+    model = Workspace
+    template_name = "research/workspace_detail.html"
+    context_object_name = "workspace"
+    slug_field = "public_id"
+    slug_url_kwarg = "public_id"
+
+    def get_queryset(self):
+        return Workspace.objects.filter(
+            user=self.request.user, deleted_at__isnull=True
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["projects"] = self.object.projects.filter(
+            deleted_at__isnull=True
+        ).order_by("-created_at")
         return ctx
 
 

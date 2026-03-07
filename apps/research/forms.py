@@ -3,7 +3,16 @@ from __future__ import annotations
 
 from django import forms
 
-from apps.research.models import ResearchProject
+from apps.research.models import ResearchProject, Workspace
+
+
+class WorkspaceForm(forms.ModelForm):
+    class Meta:
+        model = Workspace
+        fields = ["name", "description"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
 
 
 class ResearchProjectForm(forms.ModelForm):

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}{{ workspace.name }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{% url 'research:workspace-list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h2 class="mb-0 fw-bold">{{ workspace.name }}</h2>
+      {% if workspace.description %}
+      <p class="text-muted small mb-0 mt-1">{{ workspace.description }}</p>
+      {% endif %}
+    </div>
+  </div>
+  <a href="{% url 'research:project-create' %}?workspace={{ workspace.public_id }}"
+     class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-circle me-1"></i>Neue Recherche
+  </a>
+</div>
+
+{% if projects %}
+<div class="row g-3">
+  {% for project in projects %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100" style="border-color:#2d3148">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h6 class="fw-semibold mb-0">{{ project.name }}</h6>
+          <span class="badge ms-2
+            {% if project.status == 'done' %}bg-success
+            {% elif project.status == 'running' %}bg-warning text-dark
+            {% elif project.status == 'error' %}bg-danger
+            {% else %}bg-secondary{% endif %}"
+            style="font-size:.7rem">{{ project.status }}</span>
+        </div>
+        <p class="text-muted small mb-2">{{ project.query|truncatechars:70 }}</p>
+        <div class="d-flex gap-1 flex-wrap mb-3">
+          <span class="badge" style="background:#1e2035;color:#94a3b8;font-size:.7rem">
+            {% if project.summary_level == 'simple' %}Einfach
+            {% elif project.summary_level == 'medium' %}Mittel
+            {% elif project.summary_level == 'complex' %}Komplex
+            {% elif project.summary_level == 'scientific' %}Wissenschaftlich
+            {% endif %}
+          </span>
+          <span class="badge" style="background:#1e2035;color:#94a3b8;font-size:.7rem">
+            {{ project.get_research_type_display }}
+          </span>
+        </div>
+        <a href="{% url 'research:project-detail' project.public_id %}"
+           class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-eye me-1"></i>Anzeigen
+        </a>
+      </div>
+      <div class="card-footer" style="background:transparent;border-color:#2d3148">
+        <small class="text-muted">
+          <i class="bi bi-clock me-1"></i>{{ project.created_at|date:"d.m.Y H:i" }}
+        </small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-search" style="font-size:3rem;color:#2d3148"></i>
+  <p class="text-muted mt-3">Noch keine Recherchen in diesem Workspace.</p>
+  <a href="{% url 'research:project-create' %}?workspace={{ workspace.public_id }}"
+     class="btn btn-primary mt-2">
+    <i class="bi bi-plus-circle me-1"></i>Erste Recherche starten
+  </a>
+</div>
+{% endif %}
+{% endblock %}

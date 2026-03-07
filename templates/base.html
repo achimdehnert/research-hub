@@ -48,10 +48,14 @@
         <ul class="navbar-nav me-auto">
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="/research/"><i class="bi bi-journal-text me-1"></i>Projekte</a>
+            <a class="nav-link" href="{% url 'research:workspace-list' %}">
+              <i class="bi bi-folder2 me-1"></i>Workspaces
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/research/new/"><i class="bi bi-plus-circle me-1"></i>Neu</a>
+            <a class="nav-link" href="{% url 'research:project-list' %}">
+              <i class="bi bi-search me-1"></i>Recherchen
+            </a>
           </li>
           {% endif %}
         </ul>
