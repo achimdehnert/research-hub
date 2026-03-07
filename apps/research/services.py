@@ -30,9 +30,6 @@ class ResearchProjectService:
         """Execute research for a project and persist results."""
         service = self._build_service(project)
         max_sources = ResearchProject.DEPTH_TO_SOURCES.get(project.depth, 15)
-        academic_sources = project.academic_sources or [
-            "arxiv", "semantic_scholar", "pubmed", "openalex"
-        ]
         options: dict[str, Any] = {
             "max_sources": max_sources,
             "language": project.language or "de",
