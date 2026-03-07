@@ -1,11 +1,11 @@
 """Base settings for research-hub."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import dj_database_url
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 

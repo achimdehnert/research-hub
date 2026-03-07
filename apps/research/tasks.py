@@ -4,9 +4,9 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from config.celery import app
 from apps.research.models import ResearchProject
 from apps.research.services import ResearchProjectService
+from config.celery import app
 
 logger = logging.getLogger(__name__)
 
@@ -24,4 +24,4 @@ def run_research_task(self, project_id: int) -> None:
     except Exception as exc:
         logger.exception("Research task failed for project %s", project_id)
         ResearchProject.objects.filter(pk=project_id).update(status="error")
-        raise self.retry(exc=exc, countdown=60)
+        raise self.retry(exc=exc, countdown=60) from exc

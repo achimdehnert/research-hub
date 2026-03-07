@@ -4,11 +4,10 @@ from __future__ import annotations
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import CreateView, DetailView, ListView
 from django.urls import reverse_lazy
+from django.views.generic import CreateView, DetailView, ListView
 
 from apps.research.models import ResearchProject
-from apps.research.services import ResearchProjectService
 from apps.research.tasks import run_research_task
 
 

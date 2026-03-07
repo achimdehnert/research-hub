@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from iil_researchfw import ResearchService, AcademicSearchService, BraveSearchService
+from iil_researchfw import AcademicSearchService, BraveSearchService, ResearchService
 from iil_researchfw.core.models import ResearchOutput
 
 from apps.research.models import ResearchProject, ResearchResult

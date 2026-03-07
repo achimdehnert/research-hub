@@ -1,7 +1,8 @@
 """DRF API views for research-hub."""
 from rest_framework import generics, permissions
-from apps.research.models import ResearchProject
+
 from apps.research.api.serializers import ResearchProjectSerializer
+from apps.research.models import ResearchProject
 from apps.research.tasks import run_research_task
 
 

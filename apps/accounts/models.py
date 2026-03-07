@@ -1,5 +1,6 @@
 """Custom User model for research-hub."""
 import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 

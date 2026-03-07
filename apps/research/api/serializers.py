@@ -1,5 +1,6 @@
 """DRF serializers for research-hub API."""
 from rest_framework import serializers
+
 from apps.research.models import ResearchProject, ResearchResult
 
 
