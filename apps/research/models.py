@@ -33,6 +33,11 @@ class ResearchProject(models.Model):
         ("complex", "Komplex — Fachpublikum"),
         ("scientific", "Wissenschaftlich — Experten"),
     ]
+    CITATION_STYLE_CHOICES = [
+        ("none", "Keine Zitate"),
+        ("inline", "Im Text [Autor Jahr]"),
+        ("bibliography", "Literaturliste am Ende"),
+    ]
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(
@@ -56,6 +61,9 @@ class ResearchProject(models.Model):
     language = models.CharField(max_length=10, default="de")
     summary_level = models.CharField(
         max_length=20, choices=SUMMARY_LEVEL_CHOICES, default="medium"
+    )
+    citation_style = models.CharField(
+        max_length=20, choices=CITATION_STYLE_CHOICES, default="none"
     )
     status = models.CharField(
         max_length=20,

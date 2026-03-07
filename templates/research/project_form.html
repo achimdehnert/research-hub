@@ -92,13 +92,13 @@
       </div>
 
       <div class="row g-3 mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="card h-100">
             <div class="card-body">
               <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-file-text me-2"></i>Zusammenfassung</h6>
               {% for value, label in form.summary_level.field.choices %}
               <div class="form-check mb-2">
-                <input class="form-check-input" type="radio" name="summary_level" id="sl_{{ value }}" value="{{ value }}"
+                <input class="form-check-input summary-level-radio" type="radio" name="summary_level" id="sl_{{ value }}" value="{{ value }}"
                   {% if value == 'medium' %}checked{% endif %}>
                 <label class="form-check-label" for="sl_{{ value }}">{{ label }}</label>
               </div>
@@ -106,7 +106,26 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-md-4" id="citation-style-block" style="display:none">
+          <div class="card h-100" style="border-color:#6366f1">
+            <div class="card-body">
+              <h6 class="text-muted text-uppercase small fw-semibold mb-3" style="color:#a5b4fc"><i class="bi bi-journal-text me-2"></i>Zitierstil</h6>
+              {% for value, label in form.citation_style.field.choices %}
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="citation_style" id="cs_{{ value }}" value="{{ value }}"
+                  {% if value == 'none' %}checked{% endif %}>
+                <label class="form-check-label" for="cs_{{ value }}">{{ label }}</label>
+              </div>
+              {% endfor %}
+              <p class="text-muted mt-2 mb-0" style="font-size:.75rem">
+                <i class="bi bi-info-circle me-1"></i>Nur für wissenschaftliche Zusammenfassungen
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
           <div class="card h-100">
             <div class="card-body py-3">
               <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-translate me-2"></i>Sprache</h6>
@@ -120,6 +139,24 @@
           </div>
         </div>
       </div>
+
+      <script>
+        (function() {
+          var radios = document.querySelectorAll('.summary-level-radio');
+          var block = document.getElementById('citation-style-block');
+          function toggle() {
+            var selected = document.querySelector('.summary-level-radio:checked');
+            if (selected && selected.value === 'scientific') {
+              block.style.display = '';
+            } else {
+              block.style.display = 'none';
+              document.getElementById('cs_none').checked = true;
+            }
+          }
+          radios.forEach(function(r) { r.addEventListener('change', toggle); });
+          toggle();
+        })();
+      </script>
 
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary btn-lg px-5">

@@ -48,7 +48,11 @@ class ResearchProjectService:
         else:
             output = await service.research(
                 query=project.query,
-                options={**options, "summary_style": project.summary_level},
+                options={
+                    **options,
+                    "summary_style": project.summary_level,
+                    "citation_style": project.citation_style,
+                },
             )
 
         result = await ResearchResult.objects.acreate(
