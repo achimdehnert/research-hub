@@ -1,16 +1,56 @@
 {% extends 'base.html' %}
-{% block title %}Research Hub — Home{% endblock %}
+{% block title %}Research Hub{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-8 text-center py-5">
-    <h1 class="display-4">Research Hub</h1>
-    <p class="lead">AI-powered research — powered by <code>iil-researchfw</code></p>
+  <div class="col-lg-7 text-center py-5">
+    <div class="mb-4">
+      <i class="bi bi-journal-richtext" style="font-size:4rem;color:#6366f1"></i>
+    </div>
+    <h1 class="display-4 fw-bold mb-3">
+      Research<span style="color:#6366f1">Hub</span>
+    </h1>
+    <p class="lead text-muted mb-4">
+      KI-gestützte Recherche &mdash; strukturiert, zitierbar, exportierbar.<br>
+      Powered by <code style="color:#a5b4fc">iil-researchfw</code>.
+    </p>
     {% if user.is_authenticated %}
-      <a href="/research/" class="btn btn-primary btn-lg">My Projects</a>
-      <a href="/research/new/" class="btn btn-outline-primary btn-lg ms-2">New Research</a>
+      <a href="/research/" class="btn btn-primary btn-lg me-2">
+        <i class="bi bi-journal-text me-2"></i>Meine Projekte
+      </a>
+      <a href="/research/new/" class="btn btn-outline-light btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Neue Recherche
+      </a>
     {% else %}
-      <a href="/accounts/login/" class="btn btn-primary btn-lg">Login</a>
+      <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg me-2">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+      </a>
+      <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg">
+        <i class="bi bi-person-plus me-2"></i>Registrieren
+      </a>
     {% endif %}
+    <div class="row mt-5 g-3 text-start">
+      <div class="col-md-4">
+        <div class="card p-3 h-100">
+          <i class="bi bi-search mb-2" style="color:#6366f1;font-size:1.5rem"></i>
+          <h6 class="fw-semibold">Web &amp; Akademisch</h6>
+          <p class="small text-muted mb-0">Brave Search + akademische Quellen parallel durchsuchen.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3 h-100">
+          <i class="bi bi-cpu mb-2" style="color:#6366f1;font-size:1.5rem"></i>
+          <h6 class="fw-semibold">KI-Zusammenfassung</h6>
+          <p class="small text-muted mb-0">Automatische Analyse und Zusammenfassung der Ergebnisse.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3 h-100">
+          <i class="bi bi-file-earmark-text mb-2" style="color:#6366f1;font-size:1.5rem"></i>
+          <h6 class="fw-semibold">Export</h6>
+          <p class="small text-muted mb-0">Markdown, LaTeX, BibTeX, DOCX &mdash; ein Klick.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
