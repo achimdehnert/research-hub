@@ -5,8 +5,8 @@ import logging
 from typing import Any
 
 from iil_researchfw import (
-    AISummaryService,
     AcademicSearchService,
+    AISummaryService,
     BraveSearchService,
     ResearchService,
     make_together_llm,
