@@ -42,8 +42,8 @@ class ResearchProjectService:
         result = await ResearchResult.objects.acreate(
             project=project,
             query=project.query,
-            sources_json=[s.model_dump() for s in output.sources],
-            findings_json=[f.model_dump() for f in output.findings],
+            sources_json=[s.model_dump(mode="json") for s in output.sources],
+            findings_json=[f.model_dump(mode="json") for f in output.findings],
             summary=output.summary or "",
         )
         await ResearchProject.objects.filter(pk=project.pk).aupdate(
