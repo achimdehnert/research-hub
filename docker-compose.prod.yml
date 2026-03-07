@@ -1,0 +1,126 @@
+services:
+  research-hub-db:
+    image: postgres:16-alpine
+    container_name: research_hub_db
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      POSTGRES_DB: research_hub
+      POSTGRES_USER: research_hub
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-research_hub}
+    volumes:
+      - research_hub_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U research_hub -d research_hub"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - research_hub_network
+
+  research-hub-redis:
+    image: redis:7-alpine
+    container_name: research_hub_redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 48M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    networks:
+      - research_hub_network
+
+  research-hub-web:
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}/research-hub-web:${IMAGE_TAG:-latest}
+    container_name: research_hub_web
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      research-hub-db:
+        condition: service_healthy
+      research-hub-redis:
+        condition: service_healthy
+    command: ["web"]
+    ports:
+      - "127.0.0.1:8094:8000"
+    volumes:
+      - research_hub_media:/app/media
+      - research_hub_static:/app/staticfiles
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - research_hub_network
+
+  research-hub-worker:
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}/research-hub-web:${IMAGE_TAG:-latest}
+    container_name: research_hub_worker
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      research-hub-db:
+        condition: service_healthy
+      research-hub-redis:
+        condition: service_healthy
+    command: ["worker"]
+    volumes:
+      - research_hub_media:/app/media
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - research_hub_network
+
+volumes:
+  research_hub_pgdata:
+  research_hub_media:
+  research_hub_static:
+
+networks:
+  research_hub_network:
+    driver: bridge
