@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: research_hub_test
+          POSTGRES_USER: research_hub
+          POSTGRES_PASSWORD: research_hub
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements/dev.txt
+
+      - name: Lint
+        run: ruff check apps config
+
+      - name: Test
+        env:
+          DATABASE_URL: postgresql://research_hub:research_hub@localhost:5432/research_hub_test
+          SECRET_KEY: test-secret-key
+          DEBUG: "True"
+        run: |
+          coverage run -m pytest
+          coverage report

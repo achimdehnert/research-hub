@@ -1,0 +1,9 @@
+<span class="badge bg-{% if project.status == 'done' %}success{% elif project.status == 'running' %}warning{% elif project.status == 'error' %}danger{% else %}secondary{% endif %} fs-6"
+  {% if project.status == 'running' %}
+    hx-get="{% url 'research:project-status' project.public_id %}"
+    hx-trigger="every 3s"
+    hx-target="this"
+    hx-swap="outerHTML"
+  {% endif %}>
+  {{ project.status }}
+</span>

@@ -1,0 +1,23 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.base"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["apps"]
+omit = ["*/migrations/*"]
+
+[tool.coverage.report]
+fail_under = 80

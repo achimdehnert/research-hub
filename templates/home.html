@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Research Hub — Home{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 text-center py-5">
+    <h1 class="display-4">Research Hub</h1>
+    <p class="lead">AI-powered research — powered by <code>iil-researchfw</code></p>
+    {% if user.is_authenticated %}
+      <a href="/research/" class="btn btn-primary btn-lg">My Projects</a>
+      <a href="/research/new/" class="btn btn-outline-primary btn-lg ms-2">New Research</a>
+    {% else %}
+      <a href="/accounts/login/" class="btn btn-primary btn-lg">Login</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
