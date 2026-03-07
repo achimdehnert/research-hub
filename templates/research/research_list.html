@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Alle Recherchen{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold mb-0">Alle Recherchen</h2>
+  <a href="{% url 'research:research-create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Neue Recherche
+  </a>
+</div>
+
+{% if researches %}
+<div class="row g-3">
+  {% for research in researches %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100" style="border-color:#2d3148">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h6 class="fw-semibold mb-0">{{ research.name }}</h6>
+          <span class="badge ms-2
+            {% if research.status == 'done' %}bg-success
+            {% elif research.status == 'running' %}bg-warning text-dark
+            {% elif research.status == 'error' %}bg-danger
+            {% else %}bg-secondary{% endif %}"
+            style="font-size:.7rem">{{ research.status }}</span>
+        </div>
+        <p class="text-muted small mb-2">{{ research.query|truncatechars:70 }}</p>
+        {% if research.project %}
+        <p class="small mb-2" style="color:#6366f1">
+          <i class="bi bi-folder2 me-1"></i>
+          {% if research.project.workspace %}{{ research.project.workspace.name }} / {% endif %}
+          {{ research.project.name }}
+        </p>
+        {% endif %}
+        <a href="{% url 'research:research-detail' public_id=research.public_id %}"
+           class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-eye me-1"></i>Anzeigen
+        </a>
+      </div>
+      <div class="card-footer" style="background:transparent;border-color:#2d3148">
+        <small class="text-muted">
+          <i class="bi bi-clock me-1"></i>{{ research.created_at|date:"d.m.Y H:i" }}
+        </small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-search" style="font-size:3rem;color:#2d3148"></i>
+  <p class="text-muted mt-3">Noch keine Recherchen vorhanden.</p>
+  <a href="{% url 'research:workspace-list' %}" class="btn btn-primary mt-2">
+    <i class="bi bi-folder2 me-1"></i>Zu den Workspaces
+  </a>
+</div>
+{% endif %}
+{% endblock %}

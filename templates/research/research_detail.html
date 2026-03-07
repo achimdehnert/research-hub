@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}{{ research.name }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div class="d-flex align-items-center gap-3">
+    {% if project %}
+    <a href="{% url 'research:project-detail' project_id=project.public_id %}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    {% else %}
+    <a href="{% url 'research:workspace-list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    {% endif %}
+    <div>
+      {% if workspace %}
+      <p class="text-muted small mb-0">
+        <a href="{% url 'research:workspace-detail' public_id=workspace.public_id %}"
+           style="color:#6366f1;text-decoration:none">{{ workspace.name }}</a>
+        {% if project %}
+        / <a href="{% url 'research:project-detail' project_id=project.public_id %}"
+             style="color:#6366f1;text-decoration:none">{{ project.name }}</a>
+        {% endif %}
+      </p>
+      {% endif %}
+      <h2 class="mb-0 fw-bold">{{ research.name }}</h2>
+      <div class="text-muted small mt-1">
+        <span><i class="bi bi-search me-1"></i>{{ research.query }}</span>
+      </div>
+    </div>
+  </div>
+  <div id="status-badge"
+    {% if research.status == 'running' %}
+      hx-get="{% url 'research:research-status' public_id=research.public_id %}"
+      hx-trigger="every 3s"
+      hx-target="#status-badge"
+      hx-swap="outerHTML"
+    {% endif %}>
+    {% include 'research/partials/project_status.html' with project=research %}
+  </div>
+</div>
+
+<div class="row g-2 mb-4">
+  <div class="col-auto">
+    <span class="badge rounded-pill px-3 py-2"
+      style="background:#1e1f35;color:#a5b4fc;border:1px solid #2d3148">
+      <i class="bi bi-{% if research.research_type == 'web' %}globe2{% elif research.research_type == 'academic' %}mortarboard{% elif research.research_type == 'combined' %}layers{% else %}shield-check{% endif %} me-1"></i>
+      {{ research.get_research_type_display }}
+    </span>
+  </div>
+  <div class="col-auto">
+    <span class="badge rounded-pill px-3 py-2"
+      style="background:#1e1f35;color:#a5b4fc;border:1px solid #2d3148">
+      <i class="bi bi-speedometer me-1"></i>{{ research.get_depth_display }}
+    </span>
+  </div>
+  <div class="col-auto">
+    <span class="badge rounded-pill px-3 py-2"
+      style="background:#1e1f35;color:#a5b4fc;border:1px solid #2d3148">
+      <i class="bi bi-translate me-1"></i>{{ research.language|upper }}
+    </span>
+  </div>
+  <div class="col-auto">
+    <span class="badge rounded-pill px-3 py-2"
+      style="background:#1e1f35;color:#a5b4fc;border:1px solid #2d3148">
+      <i class="bi bi-bar-chart me-1"></i>
+      {% if research.summary_level == 'simple' %}Einfach
+      {% elif research.summary_level == 'medium' %}Mittel
+      {% elif research.summary_level == 'complex' %}Komplex
+      {% elif research.summary_level == 'scientific' %}Wissenschaftlich
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+{% if latest_result %}
+<div class="card mb-4" style="border-color:#2d3148">
+  <div class="card-header d-flex justify-content-between align-items-center"
+    style="background:#1e1f35;border-color:#2d3148">
+    <span class="fw-semibold" style="color:#a5b4fc">
+      <i class="bi bi-robot me-2"></i>KI-Zusammenfassung
+    </span>
+    <span class="badge" style="background:#2d3148;color:#94a3b8">
+      <i class="bi bi-bar-chart me-1"></i>
+      {% if research.summary_level == 'simple' %}Einfach
+      {% elif research.summary_level == 'medium' %}Mittel
+      {% elif research.summary_level == 'complex' %}Komplex
+      {% elif research.summary_level == 'scientific' %}Wissenschaftlich
+      {% endif %}
+    </span>
+  </div>
+  <div class="card-body pb-2">
+    <div class="d-flex flex-wrap gap-1 mb-3" id="reformat-btns">
+      {% for fmt, label, icon in reformat_formats %}
+      <button class="btn btn-sm reformat-btn"
+        style="background:#1e2035;color:#94a3b8;border:1px solid #2d3148"
+        hx-post="{% url 'research:summary-reformat' public_id=research.public_id %}"
+        hx-vals='{"target_format": "{{ fmt }}"}'
+        hx-target="#summary-body"
+        hx-swap="innerHTML"
+        hx-indicator="#summary-spinner"
+        onclick="document.querySelectorAll('.reformat-btn').forEach(b=>b.style.color='#94a3b8'); this.style.color='#a5b4fc'">
+        <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
+      </button>
+      {% endfor %}
+      <span id="summary-spinner" class="htmx-indicator ms-2" style="color:#6366f1">
+        <i class="bi bi-arrow-repeat spin"></i>
+      </span>
+    </div>
+    <div id="summary-body">
+      {% include "research/partials/summary_body.html" with summary=latest_result.summary %}
+    </div>
+  </div>
+</div>
+
+{% if latest_result.sources_json %}
+<div class="card" style="border-color:#2d3148">
+  <div class="card-header" style="background:#1e1f35;border-color:#2d3148">
+    <span class="fw-semibold" style="color:#a5b4fc">
+      <i class="bi bi-link-45deg me-2"></i>Quellen
+      <span class="badge ms-2" style="background:#2d3148;color:#94a3b8">
+        {{ latest_result.sources_json|length }}
+      </span>
+    </span>
+  </div>
+  <div class="card-body">
+    {% for source in latest_result.sources_json %}
+    <div class="mb-2 pb-2" style="border-bottom:1px solid #2d3148">
+      <a href="{{ source.url }}" target="_blank" rel="noopener"
+         class="text-decoration-none" style="color:#a5b4fc">
+        {{ source.title|default:source.url|truncatechars:80 }}
+      </a>
+      {% if source.snippet %}
+      <p class="text-muted small mb-0 mt-1">{{ source.snippet|truncatechars:120 }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% elif research.status == 'running' %}
+<div class="card" style="border-color:#2d3148">
+  <div class="card-body text-center py-5">
+    <div class="spinner-border mb-3" style="color:#6366f1"></div>
+    <p class="text-muted">Recherche läuft...</p>
+  </div>
+</div>
+{% elif research.status == 'error' %}
+<div class="alert" style="background:#450a0a;border-color:#991b1b;color:#f87171">
+  <i class="bi bi-exclamation-triangle me-2"></i>Fehler bei der Recherche.
+</div>
+{% else %}
+<div class="card" style="border-color:#2d3148">
+  <div class="card-body text-center py-5">
+    <p class="text-muted">Noch kein Ergebnis vorhanden.</p>
+  </div>
+</div>
+{% endif %}
+
+<style>
+  .spin { animation: spin .7s linear infinite; display:inline-block; }
+  @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  .htmx-indicator { display:none; }
+  .htmx-request .htmx-indicator { display:inline; }
+</style>
+{% endblock %}
