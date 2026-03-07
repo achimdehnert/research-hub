@@ -21,6 +21,8 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS", "https://research.iil.pet"
 ).split(",")
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
