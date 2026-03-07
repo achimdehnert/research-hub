@@ -15,21 +15,33 @@ logger = logging.getLogger(__name__)
 class ResearchProjectService:
     """Business logic for ResearchProject — wraps iil-researchfw."""
 
-    def _build_service(self) -> ResearchService:
+    def _build_service(self, project: ResearchProject) -> ResearchService:
         import os
         brave_key = os.environ.get("BRAVE_API_KEY", "")
+        rtype = project.research_type
+        use_web = rtype in ("web", "combined", "fact_check")
+        use_academic = rtype in ("academic", "combined")
         return ResearchService(
-            web_search=BraveSearchService(api_key=brave_key) if brave_key else None,
-            academic_search=AcademicSearchService(),
+            web_search=BraveSearchService(api_key=brave_key) if (brave_key and use_web) else None,
+            academic_search=AcademicSearchService() if use_academic else None,
         )
 
     async def run_research(self, project: ResearchProject) -> ResearchResult:
         """Execute research for a project and persist results."""
-        service = self._build_service()
-        output: ResearchOutput = await service.research(
-            query=project.query,
-            options={"max_sources": 15},
-        )
+        service = self._build_service(project)
+        max_sources = ResearchProject.DEPTH_TO_SOURCES.get(project.depth, 15)
+        academic_sources = project.academic_sources or [
+            "arxiv", "semantic_scholar", "pubmed", "openalex"
+        ]
+        options: dict[str, Any] = {
+            "max_sources": max_sources,
+            "language": project.language or "de",
+        }
+        if project.research_type == "fact_check":
+            output: ResearchOutput = await service.fact_check(project.query, sources=max_sources)
+        else:
+            output = await service.research(query=project.query, options=options)
+
         result = await ResearchResult.objects.acreate(
             project=project,
             query=project.query,
@@ -43,8 +55,23 @@ class ResearchProjectService:
         return result
 
     def create_project(
-        self, user: Any, name: str, query: str, description: str = ""
+        self,
+        user: Any,
+        name: str,
+        query: str,
+        description: str = "",
+        research_type: str = "combined",
+        depth: str = "standard",
+        academic_sources: list[str] | None = None,
+        language: str = "de",
     ) -> ResearchProject:
         return ResearchProject.objects.create(
-            user=user, name=name, query=query, description=description
+            user=user,
+            name=name,
+            query=query,
+            description=description,
+            research_type=research_type,
+            depth=depth,
+            academic_sources=academic_sources or [],
+            language=language,
         )

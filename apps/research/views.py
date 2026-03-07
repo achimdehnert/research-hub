@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
+from apps.research.forms import ResearchProjectForm
 from apps.research.models import ResearchProject
 from apps.research.tasks import run_research_task
 
@@ -24,8 +25,8 @@ class ResearchProjectListView(LoginRequiredMixin, ListView):
 
 class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
     model = ResearchProject
+    form_class = ResearchProjectForm
     template_name = "research/project_form.html"
-    fields = ["name", "query", "description"]
     success_url = reverse_lazy("research:project-list")
 
     def form_valid(self, form):

@@ -1,16 +1,139 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-{% block title %}New Research Project{% endblock %}
+{% block title %}Neue Recherche{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-8">
-    <h2>New Research Project</h2>
+  <div class="col-lg-8">
+
+    <div class="d-flex align-items-center mb-4">
+      <a href="{% url 'research:project-list' %}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h2 class="mb-0 fw-bold">Neue Recherche</h2>
+    </div>
+
     <form method="post">
       {% csrf_token %}
-      {{ form|crispy }}
-      <button type="submit" class="btn btn-primary">Start Research</button>
-      <a href="{% url 'research:project-list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-pencil me-2"></i>Thema</h6>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Titel</label>
+            <input type="text" name="name" class="form-control" placeholder="z.B. Klimawandel Alpen 2024" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Suchanfrage / Fragestellung</label>
+            <textarea name="query" class="form-control" rows="3"
+              placeholder="z.B. Welche Auswirkungen hat der Klimawandel auf Gletscher in den Alpen seit 2000?" required></textarea>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">Beschreibung <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Kontext, Ziel, Einschränkungen..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-sliders me-2"></i>Recherche-Typ</h6>
+          <div class="row g-2" id="typeCards">
+            {% for value, label in form.research_type.field.choices %}
+            <div class="col-6 col-md-3">
+              <input type="radio" name="research_type" id="rt_{{ value }}" value="{{ value }}" class="d-none"
+                {% if value == 'combined' %}checked{% endif %}>
+              <label for="rt_{{ value }}" class="type-card card p-3 text-center h-100" style="cursor:pointer">
+                {% if value == 'web' %}<i class="bi bi-globe2 d-block mb-1" style="font-size:1.5rem;color:#6366f1"></i>
+                {% elif value == 'academic' %}<i class="bi bi-mortarboard d-block mb-1" style="font-size:1.5rem;color:#6366f1"></i>
+                {% elif value == 'combined' %}<i class="bi bi-layers d-block mb-1" style="font-size:1.5rem;color:#6366f1"></i>
+                {% elif value == 'fact_check' %}<i class="bi bi-shield-check d-block mb-1" style="font-size:1.5rem;color:#6366f1"></i>
+                {% endif %}
+                <div class="small fw-semibold">{{ label }}</div>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-speedometer me-2"></i>Tiefe</h6>
+              {% for value, label in form.depth.field.choices %}
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="depth" id="d_{{ value }}" value="{{ value }}"
+                  {% if value == 'standard' %}checked{% endif %}>
+                <label class="form-check-label" for="d_{{ value }}">{{ label }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-journals me-2"></i>Akademische Quellen</h6>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="src_all" onchange="toggleAll(this)">
+                <label class="form-check-label fw-semibold" for="src_all">Alle auswählen</label>
+              </div>
+              <hr class="my-2" style="border-color:#2d3148">
+              {% for value, label in form.academic_sources.field.choices %}
+              <div class="form-check mb-1">
+                <input class="form-check-input src-check" type="checkbox" name="academic_sources"
+                  id="src_{{ value }}" value="{{ value }}" checked>
+                <label class="form-check-label small" for="src_{{ value }}">{{ label }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body py-2">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <label class="form-label mb-0 fw-semibold small"><i class="bi bi-translate me-1"></i>Sprache</label>
+            </div>
+            <div class="col-auto">
+              <select name="language" class="form-select form-select-sm" style="width:120px">
+                <option value="de" selected>Deutsch</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg px-5">
+          <i class="bi bi-play-fill me-2"></i>Recherche starten
+        </button>
+        <a href="{% url 'research:project-list' %}" class="btn btn-outline-secondary btn-lg">Abbrechen</a>
+      </div>
     </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<style>
+  .type-card { border: 2px solid #2d3148; transition: all .15s; }
+  input[type=radio]:checked + .type-card { border-color: #6366f1; background: #1e1f35; }
+  .type-card:hover { border-color: #6366f1; }
+</style>
+<script>
+function toggleAll(cb) {
+  document.querySelectorAll('.src-check').forEach(c => c.checked = cb.checked);
+}
+document.querySelectorAll('.src-check').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const all = [...document.querySelectorAll('.src-check')];
+    document.getElementById('src_all').checked = all.every(c => c.checked);
+  });
+});
+</script>
 {% endblock %}
