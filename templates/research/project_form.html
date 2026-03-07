@@ -91,14 +91,26 @@
         </div>
       </div>
 
-      <div class="card mb-4">
-        <div class="card-body py-2">
-          <div class="row align-items-center">
-            <div class="col-auto">
-              <label class="form-label mb-0 fw-semibold small"><i class="bi bi-translate me-1"></i>Sprache</label>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-file-text me-2"></i>Zusammenfassung</h6>
+              {% for value, label in form.summary_level.field.choices %}
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="summary_level" id="sl_{{ value }}" value="{{ value }}"
+                  {% if value == 'medium' %}checked{% endif %}>
+                <label class="form-check-label" for="sl_{{ value }}">{{ label }}</label>
+              </div>
+              {% endfor %}
             </div>
-            <div class="col-auto">
-              <select name="language" class="form-select form-select-sm" style="width:120px">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body py-3">
+              <h6 class="text-muted text-uppercase small fw-semibold mb-3"><i class="bi bi-translate me-2"></i>Sprache</h6>
+              <select name="language" class="form-select">
                 <option value="de" selected>Deutsch</option>
                 <option value="en">English</option>
                 <option value="fr">Français</option>

@@ -27,6 +27,12 @@ class ResearchProject(models.Model):
         ("openalex", "OpenAlex"),
     ]
     DEPTH_TO_SOURCES = {"quick": 5, "standard": 15, "deep": 30, "exhaustive": 50}
+    SUMMARY_LEVEL_CHOICES = [
+        ("simple", "Einfach — verständlich für alle"),
+        ("medium", "Mittel — informierter Leser"),
+        ("complex", "Komplex — Fachpublikum"),
+        ("scientific", "Wissenschaftlich — Experten"),
+    ]
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(
@@ -48,6 +54,9 @@ class ResearchProject(models.Model):
         help_text="Akademische Quellen (arxiv, semantic_scholar, pubmed, openalex)",
     )
     language = models.CharField(max_length=10, default="de")
+    summary_level = models.CharField(
+        max_length=20, choices=SUMMARY_LEVEL_CHOICES, default="medium"
+    )
     status = models.CharField(
         max_length=20,
         choices=[("draft", "Draft"), ("running", "Running"), ("done", "Done"), ("error", "Error")],

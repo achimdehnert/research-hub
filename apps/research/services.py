@@ -4,7 +4,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from iil_researchfw import AcademicSearchService, BraveSearchService, ResearchService
+from iil_researchfw import (
+    AISummaryService,
+    AcademicSearchService,
+    BraveSearchService,
+    ResearchService,
+    make_together_llm,
+)
 from iil_researchfw.core.models import ResearchOutput
 
 from apps.research.models import ResearchProject, ResearchResult
@@ -18,12 +24,15 @@ class ResearchProjectService:
     def _build_service(self, project: ResearchProject) -> ResearchService:
         import os
         brave_key = os.environ.get("BRAVE_API_KEY", "")
+        together_key = os.environ.get("TOGETHER_API_KEY", "")
         rtype = project.research_type
         use_web = rtype in ("web", "combined", "fact_check")
         use_academic = rtype in ("academic", "combined")
+        llm_fn = make_together_llm(api_key=together_key) if together_key else None
         return ResearchService(
             web_search=BraveSearchService(api_key=brave_key) if (brave_key and use_web) else None,
             academic_search=AcademicSearchService() if use_academic else None,
+            summary_service=AISummaryService(llm_fn=llm_fn) if llm_fn else None,
         )
 
     async def run_research(self, project: ResearchProject) -> ResearchResult:
@@ -37,7 +46,10 @@ class ResearchProjectService:
         if project.research_type == "fact_check":
             output: ResearchOutput = await service.fact_check(project.query, sources=max_sources)
         else:
-            output = await service.research(query=project.query, options=options)
+            output = await service.research(
+                query=project.query,
+                options={**options, "summary_style": project.summary_level},
+            )
 
         result = await ResearchResult.objects.acreate(
             project=project,

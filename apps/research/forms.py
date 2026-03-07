@@ -25,6 +25,7 @@ class ResearchProjectForm(forms.ModelForm):
             "depth",
             "academic_sources",
             "language",
+            "summary_level",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 2}),
