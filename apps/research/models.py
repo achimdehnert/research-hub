@@ -5,6 +5,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 
 
 class Workspace(models.Model):
@@ -33,8 +34,11 @@ class Workspace(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def get_absolute_url(self) -> str:
+        return reverse("research:workspace-detail", kwargs={"public_id": self.public_id})
+
     def project_count(self) -> int:
-        return self.research_projects.filter(deleted_at__isnull=True).count()
+        return self.projects.filter(deleted_at__isnull=True).count()
 
 
 class Project(models.Model):
@@ -67,6 +71,9 @@ class Project(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_absolute_url(self) -> str:
+        return reverse("research:project-detail", kwargs={"project_id": self.public_id})
 
     def research_count(self) -> int:
         return self.researches.filter(deleted_at__isnull=True).count()
@@ -112,7 +119,6 @@ class ResearchProject(models.Model):
         on_delete=models.CASCADE,
         related_name="research_projects",
     )
-    # New: project FK (nullable for backward compat with existing rows)
     project = models.ForeignKey(
         Project,
         on_delete=models.SET_NULL,
@@ -120,7 +126,6 @@ class ResearchProject(models.Model):
         blank=True,
         related_name="researches",
     )
-    # Legacy: direct workspace FK kept for data that predates Project layer
     workspace = models.ForeignKey(
         Workspace,
         on_delete=models.SET_NULL,
@@ -172,6 +177,9 @@ class ResearchProject(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_absolute_url(self) -> str:
+        return reverse("research:research-detail", kwargs={"public_id": self.public_id})
 
 
 class ResearchResult(models.Model):
