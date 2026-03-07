@@ -1,14 +1,17 @@
 """Research views — HTMX-powered."""
 from __future__ import annotations
 
+import os
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.research.forms import ResearchProjectForm
-from apps.research.models import ResearchProject
+from apps.research.models import ResearchProject, ResearchResult
 from apps.research.tasks import run_research_task
 
 
@@ -68,7 +71,6 @@ def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         ResearchProject, public_id=public_id, user=request.user
     )
     if request.headers.get("HX-Request") == "true":
-        from django.template.loader import render_to_string
         html = render_to_string(
             "research/partials/project_status.html", {"project": project}
         )
@@ -83,9 +85,6 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     Returns: rendered partial with reformatted summary (no new LLM call for
     simple formats; LLM-backed for complex transformations).
     """
-    from django.template.loader import render_to_string
-    from apps.research.models import ResearchResult
-
     if request.method != "POST" or request.headers.get("HX-Request") != "true":
         return HttpResponse(status=400)
 
@@ -99,8 +98,7 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     target_format = request.POST.get("target_format", "structured")
 
     try:
-        from authoringfw.text import TextReformatter, ReformatTask
-        import os
+        from authoringfw.text import ReformatTask, TextReformatter
 
         llm_fn = _make_sync_llm(os.environ.get("TOGETHER_API_KEY", ""))
         reformatter = TextReformatter(llm_fn=llm_fn)
