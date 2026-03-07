@@ -33,6 +33,11 @@
     .project-card:hover { border-color: #6366f1; transition: border-color .2s; }
     a { color: #a5b4fc; }
     a:hover { color: #6366f1; }
+    .breadcrumb { background: transparent; padding: 0; margin: 0; }
+    .breadcrumb-item + .breadcrumb-item::before { color: #4a5568; }
+    .breadcrumb-item a { color: #6366f1; text-decoration: none; font-size: .85rem; }
+    .breadcrumb-item a:hover { color: #a5b4fc; }
+    .breadcrumb-item.active { color: #94a3b8; font-size: .85rem; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -81,6 +86,22 @@
   </nav>
 
   <div class="container mt-4">
+    {% block breadcrumb %}
+    {% if breadcrumb %}
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        {% for item in breadcrumb %}
+          {% if forloop.last %}
+          <li class="breadcrumb-item active">{{ item.label }}</li>
+          {% else %}
+          <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.label }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
+    {% endif %}
+    {% endblock %}
+
     {% if messages %}
       {% for message in messages %}
         <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">

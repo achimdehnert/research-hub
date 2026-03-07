@@ -1,4 +1,4 @@
-name: CD - Build and Push GHCR
+name: CD - Build, Push and Deploy
 
 on:
   push:
@@ -30,3 +30,22 @@ jobs:
           tags: |
             ghcr.io/achimdehnert/research-hub/research-hub-web:latest
             ghcr.io/achimdehnert/research-hub/research-hub-web:${{ github.sha }}
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to production
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 88.198.191.108
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/research-hub
+            docker compose -f docker-compose.prod.yml pull research-hub-web research-hub-worker
+            docker compose -f docker-compose.prod.yml run --rm research-hub-web python manage.py migrate --noinput
+            docker compose -f docker-compose.prod.yml up -d --no-deps research-hub-web research-hub-worker
+            docker image prune -f
