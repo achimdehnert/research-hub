@@ -34,7 +34,7 @@ fi
 
 if [ "$1" = "worker" ]; then
     echo "[entrypoint] Starting Celery worker..."
-    exec celery -A config worker -l info -Q default
+    exec celery -A config worker -l info -Q celery
 fi
 
 if [ "$1" = "beat" ]; then
