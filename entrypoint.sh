@@ -2,7 +2,14 @@
 set -e
 
 echo "[entrypoint] Waiting for database..."
-until python -c "import psycopg2; import os; psycopg2.connect(os.environ['DATABASE_URL'])" 2>/dev/null; do
+until python -c "
+import os, urllib.parse
+url = os.environ.get('DATABASE_URL', '')
+r = urllib.parse.urlparse(url)
+import socket
+s = socket.create_connection((r.hostname, r.port or 5432), timeout=2)
+s.close()
+" 2>/dev/null; do
     echo "  DB not ready, retrying..."
     sleep 2
 done

@@ -65,7 +65,7 @@ services:
         condition: service_healthy
     command: ["web"]
     ports:
-      - "127.0.0.1:8094:8000"
+      - "127.0.0.1:8098:8000"
     volumes:
       - research_hub_media:/app/media
       - research_hub_static:/app/staticfiles
