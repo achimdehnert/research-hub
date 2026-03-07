@@ -23,6 +23,9 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+
 DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
