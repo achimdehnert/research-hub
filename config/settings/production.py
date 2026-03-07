@@ -1,6 +1,7 @@
 """Production settings — extends base."""
-from config.settings.base import *  # noqa: F401, F403
 import os
+
+from config.settings.base import *  # noqa: F401, F403
 
 DEBUG = False
 
