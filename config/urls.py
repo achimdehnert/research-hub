@@ -2,10 +2,17 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+
+def healthz(request):
+    return JsonResponse({"status": "ok", "service": "research-hub"})
+
+
 urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("research/", include("apps.research.urls")),
