@@ -31,8 +31,8 @@ def test_create_project_with_description(db):
     assert project.description == "desc"
 
 
-@pytest.mark.django_db
-def test_run_research_success(db):
+@pytest.mark.django_db(transaction=True)
+def test_run_research_success():
     user = User.objects.create_user(
         username="async_user", password="pass", email="async@iil.pet"
     )
@@ -58,8 +58,8 @@ def test_run_research_success(db):
     assert project.status == "done"
 
 
-@pytest.mark.django_db
-def test_run_research_failure(db):
+@pytest.mark.django_db(transaction=True)
+def test_run_research_failure():
     user = User.objects.create_user(
         username="fail_user", password="pass", email="fail@iil.pet"
     )
