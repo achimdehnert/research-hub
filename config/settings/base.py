@@ -17,6 +17,10 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,research.iil.pet").split(",")
 
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS", "https://research.iil.pet"
+).split(",")
+
 DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
