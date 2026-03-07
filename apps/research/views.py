@@ -10,12 +10,12 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
-from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm
+from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm  # noqa: I001
 from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
 from apps.research.tasks import run_research_task
 
 
-# ── Workspace views ───────────────────────────────────────────────────────────
+# ── Workspace views ────────────────────────────────────────────────────────
 
 class WorkspaceListView(LoginRequiredMixin, ListView):
     model = Workspace
@@ -59,7 +59,7 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-# ── Project views ─────────────────────────────────────────────────────────────
+# ── Project views ────────────────────────────────────────────────────────────
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
@@ -110,7 +110,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-# ── ResearchProject (Recherche) views ────────────────────────────────────────
+# ── ResearchProject (Recherche) views ──────────────────────────────────────
 
 class ResearchProjectListView(LoginRequiredMixin, ListView):
     model = ResearchProject
@@ -220,15 +220,17 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     target_format = request.POST.get("target_format", "structured")
 
     try:
-        from authoringfw.text import ReformatTask, TextReformatter  # noqa: PLC0415
+        from authoringfw.text import ReformatTask, TextReformatter
 
         llm_fn = _make_sync_llm(os.environ.get("TOGETHER_API_KEY", ""))
         reformatter = TextReformatter(llm_fn=llm_fn)
-        reformat_result = reformatter.reformat(ReformatTask(
-            source_text=result.summary,
-            target_format=target_format,
-            language=research.language or "de",
-        ))
+        reformat_result = reformatter.reformat(
+            ReformatTask(
+                source_text=result.summary,
+                target_format=target_format,
+                language=research.language or "de",
+            )
+        )
         reformatted_text = reformat_result.content
     except Exception:  # noqa: BLE001
         reformatted_text = result.summary
@@ -243,7 +245,7 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
 
 def _make_sync_llm(api_key: str):
     """Sync LLM callable wrapping Together AI for TextReformatter."""
-    import httpx  # noqa: PLC0415
+    import httpx
 
     def _call(prompt: str) -> str:
         if not api_key:
