@@ -19,6 +19,7 @@ django-celery-results>=2.5
 
 # iil-ecosystem
 iil-researchfw>=0.2.4,<1
+iil-authoringfw>=0.6.2,<1
 
 # REST API
 djangorestframework>=3.15

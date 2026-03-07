@@ -62,32 +62,38 @@
       </span>
       {% endwith %}
     </div>
-    <div class="card-body summary-body">
-      {% with summary=result.summary %}
-      {% for line in summary.splitlines %}
-        {% if line|slice:":2" == "**" and line|slice:"-2:" == "**" %}
-          <h6 class="summary-section mt-3 mb-2" style="color:#a5b4fc;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700">
-            {{ line|slice:"2:-2" }}
-          </h6>
-        {% elif line|slice:":3" == "** " or line|slice:":2" == "**" %}
-          <p class="fw-semibold mb-1" style="color:#e2e8f0">{{ line|slice:"2:" }}</p>
-        {% elif line|slice:":2" == "- " %}
-          <div class="d-flex gap-2 mb-1">
-            <span style="color:#6366f1;flex-shrink:0">▸</span>
-            <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
-          </div>
-        {% elif line|slice:":2" == "* " %}
-          <div class="d-flex gap-2 mb-1">
-            <span style="color:#6366f1;flex-shrink:0">▸</span>
-            <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
-          </div>
-        {% elif line %}
-          <p class="mb-1" style="line-height:1.75">{{ line }}</p>
-        {% endif %}
-      {% endfor %}
-      {% endwith %}
+    <div class="card-body pb-2">
+      <div class="d-flex flex-wrap gap-1 mb-3" id="reformat-btns">
+        {% with reformat_url=project.public_id %}
+        {% for fmt, label, icon in reformat_formats %}
+        <button class="btn btn-sm reformat-btn"
+          style="background:#1e2035;color:#94a3b8;border:1px solid #2d3148"
+          hx-post="{% url 'research:summary-reformat' project.public_id %}"
+          hx-vals='{"target_format": "{{ fmt }}"}'
+          hx-target="#summary-body"
+          hx-swap="innerHTML"
+          hx-indicator="#summary-spinner"
+          onclick="document.querySelectorAll('.reformat-btn').forEach(b=>b.style.color='#94a3b8'); this.style.color='#a5b4fc'">
+          <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
+        </button>
+        {% endfor %}
+        {% endwith %}
+        <span id="summary-spinner" class="htmx-indicator ms-2" style="color:#6366f1">
+          <i class="bi bi-arrow-repeat spin"></i>
+        </span>
+      </div>
+      <div id="summary-body">
+        {% include "research/partials/summary_body.html" with summary=result.summary %}
+      </div>
     </div>
   </div>
+
+  <style>
+    .spin { animation: spin .7s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .htmx-indicator { display:none; }
+    .htmx-request .htmx-indicator { display:inline; }
+  </style>
   {% endif %}
 
   {% if result.findings_json %}

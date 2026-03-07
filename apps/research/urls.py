@@ -9,4 +9,5 @@ urlpatterns = [
     path("new/", views.ResearchProjectCreateView.as_view(), name="project-create"),
     path("<uuid:public_id>/", views.ResearchProjectDetailView.as_view(), name="project-detail"),
     path("<uuid:public_id>/status/", views.project_status_htmx, name="project-status"),
+    path("<uuid:public_id>/reformat/", views.summary_reformat_htmx, name="summary-reformat"),
 ]

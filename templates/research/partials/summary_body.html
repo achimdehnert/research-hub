@@ -1,0 +1,19 @@
+{% for line in summary.splitlines %}
+  {% if line|slice:":2" == "**" and line|slice:"-2:" == "**" %}
+    <h6 class="summary-section mt-3 mb-2" style="color:#a5b4fc;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700">
+      {{ line|slice:"2:-2" }}
+    </h6>
+  {% elif line|slice:":2" == "- " %}
+    <div class="d-flex gap-2 mb-1">
+      <span style="color:#6366f1;flex-shrink:0">▸</span>
+      <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
+    </div>
+  {% elif line|slice:":2" == "* " %}
+    <div class="d-flex gap-2 mb-1">
+      <span style="color:#6366f1;flex-shrink:0">▸</span>
+      <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
+    </div>
+  {% elif line %}
+    <p class="mb-1" style="line-height:1.75">{{ line }}</p>
+  {% endif %}
+{% endfor %}
