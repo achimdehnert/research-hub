@@ -50,9 +50,42 @@
 
   {% if result.summary %}
   <div class="card mb-3" style="border-color:#6366f1">
-    <div class="card-body">
-      <h5 class="fw-bold mb-3"><i class="bi bi-cpu me-2" style="color:#6366f1"></i>KI-Zusammenfassung</h5>
-      <p class="mb-0" style="line-height:1.8">{{ result.summary }}</p>
+    <div class="card-header d-flex align-items-center justify-content-between py-2" style="background:rgba(99,102,241,.08);border-color:#6366f1">
+      <span class="fw-bold"><i class="bi bi-cpu me-2" style="color:#6366f1"></i>KI-Zusammenfassung</span>
+      {% with level=project.summary_level %}
+      <span class="badge" style="background:#2d3148;color:#a5b4fc;font-size:.72rem;font-weight:500">
+        {% if level == 'simple' %}<i class="bi bi-emoji-smile me-1"></i>Einfach
+        {% elif level == 'medium' %}<i class="bi bi-bar-chart me-1"></i>Mittel
+        {% elif level == 'complex' %}<i class="bi bi-diagram-3 me-1"></i>Komplex
+        {% elif level == 'scientific' %}<i class="bi bi-journal-text me-1"></i>Wissenschaftlich
+        {% else %}{{ level }}{% endif %}
+      </span>
+      {% endwith %}
+    </div>
+    <div class="card-body summary-body">
+      {% with summary=result.summary %}
+      {% for line in summary.splitlines %}
+        {% if line|slice:":2" == "**" and line|slice:"-2:" == "**" %}
+          <h6 class="summary-section mt-3 mb-2" style="color:#a5b4fc;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700">
+            {{ line|slice:"2:-2" }}
+          </h6>
+        {% elif line|slice:":3" == "** " or line|slice:":2" == "**" %}
+          <p class="fw-semibold mb-1" style="color:#e2e8f0">{{ line|slice:"2:" }}</p>
+        {% elif line|slice:":2" == "- " %}
+          <div class="d-flex gap-2 mb-1">
+            <span style="color:#6366f1;flex-shrink:0">▸</span>
+            <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
+          </div>
+        {% elif line|slice:":2" == "* " %}
+          <div class="d-flex gap-2 mb-1">
+            <span style="color:#6366f1;flex-shrink:0">▸</span>
+            <span style="line-height:1.6">{{ line|slice:"2:" }}</span>
+          </div>
+        {% elif line %}
+          <p class="mb-1" style="line-height:1.75">{{ line }}</p>
+        {% endif %}
+      {% endfor %}
+      {% endwith %}
     </div>
   </div>
   {% endif %}
