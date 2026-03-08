@@ -53,12 +53,14 @@
         <ul class="navbar-nav me-auto">
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'research:workspace-list' %}">
+            <a class="nav-link {% if request.resolver_match.namespace == 'research' and request.resolver_match.url_name == 'workspace-list' %}active{% endif %}"
+               href="{% url 'research:workspace-list' %}">
               <i class="bi bi-folder2 me-1"></i>Workspaces
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'research:research-list' %}">
+            <a class="nav-link {% if request.resolver_match.url_name == 'research-list' %}active{% endif %}"
+               href="{% url 'research:research-list' %}">
               <i class="bi bi-search me-1"></i>Recherchen
             </a>
           </li>
@@ -66,6 +68,12 @@
         </ul>
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="/billing/modules/"
+               title="Module verwalten">
+              <i class="bi bi-grid me-1"></i>Module
+            </a>
+          </li>
           <li class="nav-item">
             <span class="nav-link text-muted"><i class="bi bi-person-circle me-1"></i>{{ user.email }}</span>
           </li>
