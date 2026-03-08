@@ -146,7 +146,12 @@ class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("research:workspace-list")
 
     def _get_project(self):
-        project_id = self.request.GET.get("project") or self.request.POST.get("project_id")
+        """Resolve project from GET or POST — checks all possible key names."""
+        project_id = (
+            self.request.GET.get("project")
+            or self.request.POST.get("project_id")
+            or self.request.POST.get("project")
+        )
         if project_id:
             try:
                 return Project.objects.get(public_id=project_id, user=self.request.user)
