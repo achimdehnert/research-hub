@@ -33,6 +33,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Configure git credentials for private platform repo
+        run: |
+          git config --global url."https://${{ secrets.PLATFORM_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Install dependencies
         run: pip install -r requirements/dev.txt
 

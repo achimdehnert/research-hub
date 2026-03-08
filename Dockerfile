@@ -1,8 +1,9 @@
+# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
 ARG APP_NAME=research-hub
 LABEL org.opencontainers.image.source="https://github.com/achimdehnert/${APP_NAME}"
-LABEL org.opencontainers.image.description="Research Hub — AI-powered research platform"
+LABEL org.opencontainers.image.description="Research Hub \u2014 AI-powered research platform"
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -10,12 +11,19 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev curl \
+    build-essential libpq-dev curl git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ /app/requirements/
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /app/requirements/prod.txt
+
+# Install dependencies — git credentials injected at build time via secret,
+# never stored in any image layer.
+RUN --mount=type=secret,id=GIT_TOKEN \
+    GIT_TOKEN=$(cat /run/secrets/GIT_TOKEN) \
+    && git config --global url."https://${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
+    && pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir -r /app/requirements/prod.txt \
+    && git config --global --unset url."https://${GIT_TOKEN}@github.com/".insteadOf || true
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

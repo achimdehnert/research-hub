@@ -22,6 +22,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -30,6 +33,8 @@ jobs:
           tags: |
             ghcr.io/achimdehnert/research-hub/research-hub-web:latest
             ghcr.io/achimdehnert/research-hub/research-hub-web:${{ github.sha }}
+          secrets: |
+            GIT_TOKEN=${{ secrets.PLATFORM_ACCESS_TOKEN }}
 
   deploy:
     needs: build-push
