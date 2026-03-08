@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
-from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm  # noqa: I001
+from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm
 from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
 from apps.research.tasks import run_research_task
 
@@ -56,6 +56,10 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
         ctx["projects"] = self.object.projects.filter(
             deleted_at__isnull=True
         ).order_by("-created_at")
+        ctx["breadcrumb"] = [
+            {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
+            {"label": self.object.name, "url": ""},
+        ]
         return ctx
 
 
@@ -76,7 +80,13 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["workspace"] = self._get_workspace()
+        ws = self._get_workspace()
+        ctx["workspace"] = ws
+        ctx["breadcrumb"] = [
+            {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
+            {"label": ws.name, "url": ws.get_absolute_url()},
+            {"label": "Neues Projekt", "url": ""},
+        ]
         return ctx
 
     def form_valid(self, form):
@@ -103,10 +113,16 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["workspace"] = self.object.workspace
+        ws = self.object.workspace
+        ctx["workspace"] = ws
         ctx["researches"] = self.object.researches.filter(
             deleted_at__isnull=True
         ).order_by("-created_at")
+        ctx["breadcrumb"] = [
+            {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
+            {"label": ws.name, "url": ws.get_absolute_url()},
+            {"label": self.object.name, "url": ""},
+        ]
         return ctx
 
 
@@ -144,6 +160,12 @@ class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
         if project:
             ctx["project"] = project
             ctx["workspace"] = project.workspace
+            ctx["breadcrumb"] = [
+                {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
+                {"label": project.workspace.name, "url": project.workspace.get_absolute_url()},
+                {"label": project.name, "url": project.get_absolute_url()},
+                {"label": "Neue Recherche", "url": ""},
+            ]
         return ctx
 
     def form_valid(self, form):
@@ -177,10 +199,19 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["latest_result"] = self.object.results.order_by("-id").first()
-        ctx["project"] = self.object.project
-        ctx["workspace"] = self.object.workspace or (
-            self.object.project.workspace if self.object.project else None
+        project = self.object.project
+        workspace = self.object.workspace or (
+            project.workspace if project else None
         )
+        ctx["project"] = project
+        ctx["workspace"] = workspace
+        if project and workspace:
+            ctx["breadcrumb"] = [
+                {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
+                {"label": workspace.name, "url": workspace.get_absolute_url()},
+                {"label": project.name, "url": project.get_absolute_url()},
+                {"label": self.object.name, "url": ""},
+            ]
         ctx["reformat_formats"] = [
             ("structured", "Strukturiert", "layout-text-sidebar"),
             ("bullets", "Stichpunkte", "list-ul"),
