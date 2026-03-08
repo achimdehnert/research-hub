@@ -16,6 +16,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("research/", include("apps.research.urls")),
+    path("tenancy/", include("apps.tenancy.urls")),
     path("billing/modules/", include("django_module_shop.urls")),
     path("api/v1/", include("apps.research.api.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

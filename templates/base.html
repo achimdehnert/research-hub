@@ -38,6 +38,8 @@
     .breadcrumb-item a { color: #6366f1; text-decoration: none; font-size: .85rem; }
     .breadcrumb-item a:hover { color: #a5b4fc; }
     .breadcrumb-item.active { color: #94a3b8; font-size: .85rem; }
+    .tenant-badge { background: #1e2035; border: 1px solid #2d3148; color: #a5b4fc;
+                    font-size: .75rem; padding: .2rem .6rem; border-radius: .375rem; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -46,6 +48,11 @@
   <nav class="navbar navbar-expand-lg">
     <div class="container">
       <a class="navbar-brand" href="/">Research<span>Hub</span></a>
+      {% if request.tenant %}
+      <span class="tenant-badge ms-2">
+        <i class="bi bi-building me-1"></i>{{ request.tenant.name }}
+      </span>
+      {% endif %}
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -69,8 +76,12 @@
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="/billing/modules/"
-               title="Module verwalten">
+            <a class="nav-link" href="{% url 'tenancy:org-list' %}" title="Organisationen">
+              <i class="bi bi-building me-1"></i>Orgs
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/billing/modules/" title="Module verwalten">
               <i class="bi bi-grid me-1"></i>Module
             </a>
           </li>

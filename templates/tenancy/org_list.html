@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Organisationen{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-0">Meine Organisationen</h2>
+    <p class="text-muted small mb-0">Wechsle zwischen Organisationen oder erstelle eine neue</p>
+  </div>
+  <a href="{% url 'tenancy:org-create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Neue Organisation
+  </a>
+</div>
+
+{% if memberships %}
+<div class="row g-3">
+  {% for m in memberships %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 {% if current_tenant and current_tenant.tenant_id == m.organization.tenant_id %}border-primary{% endif %}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="fw-bold mb-0">{{ m.organization.name }}</h5>
+          <span class="badge" style="background:#1e2035;color:#a5b4fc">{{ m.get_role_display }}</span>
+        </div>
+        <p class="text-muted small mb-1">
+          <i class="bi bi-link-45deg me-1"></i><code>{{ m.organization.slug }}</code>
+        </p>
+        <p class="text-muted small mb-3">
+          <span class="badge badge-status-{% if m.organization.status == 'active' %}done{% elif m.organization.status == 'trial' %}running{% else %}error{% endif %}">
+            {{ m.organization.get_status_display }}
+          </span>
+        </p>
+      </div>
+      <div class="card-footer d-flex justify-content-between" style="background:transparent;border-color:#2d3148">
+        <small class="text-muted">
+          <i class="bi bi-calendar me-1"></i>{{ m.organization.created_at|date:"d.m.Y" }}
+        </small>
+        {% if current_tenant and current_tenant.tenant_id == m.organization.tenant_id %}
+        <small style="color:#6366f1"><i class="bi bi-check-circle-fill me-1"></i>Aktiv</small>
+        {% else %}
+        <a href="http://{{ m.organization.slug }}.research.iil.pet/research/" class="btn btn-sm btn-outline-primary" style="font-size:.75rem">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Wechseln
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-building" style="font-size:3rem;color:#2d3148"></i>
+  <p class="text-muted mt-3 mb-1 fw-semibold">Noch keine Organisation.</p>
+  <p class="text-muted small mb-4">Erstelle eine Organisation um mit deinem Team zusammenzuarbeiten.</p>
+  <a href="{% url 'tenancy:org-create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Organisation erstellen
+  </a>
+</div>
+{% endif %}
+{% endblock %}
