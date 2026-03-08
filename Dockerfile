@@ -16,14 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements/ /app/requirements/
 
-# Install dependencies — git credentials injected at build time via secret,
-# never stored in any image layer.
-RUN --mount=type=secret,id=GIT_TOKEN \
+# Install dependencies.
+# GIT_TOKEN is injected at build time via --secret and is never stored
+# in any image layer (BuildKit --mount=type=secret).
+RUN --mount=type=secret,id=GIT_TOKEN,required=true \
     GIT_TOKEN=$(cat /run/secrets/GIT_TOKEN) \
-    && git config --global url."https://${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
+    && git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
     && pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /app/requirements/prod.txt \
-    && git config --global --unset url."https://${GIT_TOKEN}@github.com/".insteadOf || true
+    && git config --global --remove-section url."https://x-access-token:${GIT_TOKEN}@github.com/" 2>/dev/null || true
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

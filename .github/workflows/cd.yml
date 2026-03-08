@@ -34,7 +34,7 @@ jobs:
             ghcr.io/achimdehnert/research-hub/research-hub-web:latest
             ghcr.io/achimdehnert/research-hub/research-hub-web:${{ github.sha }}
           secrets: |
-            GIT_TOKEN=${{ secrets.PLATFORM_ACCESS_TOKEN }}
+            GIT_TOKEN=${{ secrets.PROJECT_PAT }}
 
   deploy:
     needs: build-push
