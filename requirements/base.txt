@@ -38,5 +38,6 @@ gunicorn>=21.2
 whitenoise>=6.6
 sentry-sdk>=2.0
 
-# Module Shop
+# Platform shared packages
+django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
 django-module-shop @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-module-shop

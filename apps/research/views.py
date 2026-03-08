@@ -15,7 +15,16 @@ from apps.research.models import Project, ResearchProject, ResearchResult, Works
 from apps.research.tasks import run_research_task
 
 
-# ── Workspace views ────────────────────────────────────────────────────────
+def _tenant_workspace_qs(request):
+    """Return Workspace queryset filtered by tenant_id if present, else by user."""
+    tenant_id = getattr(request, "tenant_id", None)
+    qs = Workspace.objects.filter(deleted_at__isnull=True)
+    if tenant_id:
+        return qs.filter(tenant_id=tenant_id)
+    return qs.filter(user=request.user)
+
+
+# ── Workspace views ─────────────────────────────────────────────────────
 
 class WorkspaceListView(LoginRequiredMixin, ListView):
     model = Workspace
@@ -23,9 +32,7 @@ class WorkspaceListView(LoginRequiredMixin, ListView):
     context_object_name = "workspaces"
 
     def get_queryset(self):
-        return Workspace.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        ).prefetch_related("projects")
+        return _tenant_workspace_qs(self.request).prefetch_related("projects")
 
 
 class WorkspaceCreateView(LoginRequiredMixin, CreateView):
@@ -36,6 +43,9 @@ class WorkspaceCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            form.instance.tenant_id = tenant_id
         return super().form_valid(form)
 
 
@@ -47,9 +57,7 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
     slug_url_kwarg = "public_id"
 
     def get_queryset(self):
-        return Workspace.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return _tenant_workspace_qs(self.request)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -63,7 +71,7 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-# ── Project views ────────────────────────────────────────────────────────────
+# ── Project views ──────────────────────────────────────────────────────
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
@@ -72,10 +80,8 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
     def _get_workspace(self):
         return get_object_or_404(
-            Workspace,
+            _tenant_workspace_qs(self.request),
             public_id=self.kwargs["workspace_id"],
-            user=self.request.user,
-            deleted_at__isnull=True,
         )
 
     def get_context_data(self, **kwargs):
@@ -108,7 +114,8 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Project.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
+            workspace__in=_tenant_workspace_qs(self.request),
+            deleted_at__isnull=True,
         )
 
     def get_context_data(self, **kwargs):
@@ -126,7 +133,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-# ── ResearchProject (Recherche) views ──────────────────────────────────────
+# ── ResearchProject (Recherche) views ────────────────────────────────
 
 class ResearchProjectListView(LoginRequiredMixin, ListView):
     model = ResearchProject
@@ -135,7 +142,8 @@ class ResearchProjectListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
+            workspace__in=_tenant_workspace_qs(self.request),
+            deleted_at__isnull=True,
         )
 
 
@@ -154,7 +162,10 @@ class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
         )
         if project_id:
             try:
-                return Project.objects.get(public_id=project_id, user=self.request.user)
+                return Project.objects.get(
+                    public_id=project_id,
+                    workspace__in=_tenant_workspace_qs(self.request),
+                )
             except Project.DoesNotExist:
                 pass
         return None
@@ -198,7 +209,8 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
+            workspace__in=_tenant_workspace_qs(self.request),
+            deleted_at__isnull=True,
         ).prefetch_related("results")
 
     def get_context_data(self, **kwargs):
@@ -231,7 +243,9 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
 def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     """HTMX polling endpoint for research status."""
     research = get_object_or_404(
-        ResearchProject, public_id=public_id, user=request.user
+        ResearchProject,
+        public_id=public_id,
+        workspace__in=_tenant_workspace_qs(request),
     )
     if request.headers.get("HX-Request") == "true":
         html = render_to_string(
@@ -247,7 +261,9 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         return HttpResponse(status=400)
 
     research = get_object_or_404(
-        ResearchProject, public_id=public_id, user=request.user
+        ResearchProject,
+        public_id=public_id,
+        workspace__in=_tenant_workspace_qs(request),
     )
     result = ResearchResult.objects.filter(project=research).order_by("-id").first()
     if not result or not result.summary:

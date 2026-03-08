@@ -44,6 +44,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "django_celery_beat",
     "django_celery_results",
+    "django_tenancy",
     "django_module_shop",
 ]
 
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "django_tenancy.middleware.SubdomainTenantMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

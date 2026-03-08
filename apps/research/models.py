@@ -9,9 +9,18 @@ from django.urls import reverse
 
 
 class Workspace(models.Model):
-    """Top-level container: one Workspace holds multiple Projects."""
+    """Top-level container: one Workspace holds multiple Projects.
+
+    tenant_id mirrors Organization.tenant_id from django_tenancy.
+    All child objects (Project, ResearchProject) are isolated by
+    this tenant_id via their FK chain — no need to repeat it.
+    """
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    tenant_id = models.UUIDField(
+        null=True, blank=True, db_index=True,
+        help_text="Organization.tenant_id from django_tenancy. NULL = personal workspace.",
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -29,6 +38,9 @@ class Workspace(models.Model):
             models.UniqueConstraint(
                 fields=["user", "name"], name="unique_user_workspace_name"
             ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id"], name="idx_workspace_tenant"),
         ]
 
     def __str__(self) -> str:
