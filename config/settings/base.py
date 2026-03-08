@@ -44,6 +44,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "django_celery_beat",
     "django_celery_results",
+    "django_module_shop",
 ]
 
 LOCAL_APPS = [
@@ -162,6 +163,35 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
+
+# Module Shop
+MODULE_SHOP_CATALOGUE = {
+    "research_basic": {
+        "name": "Research Basic",
+        "description": "Web-Recherche, Zusammenfassung, Quellen",
+        "icon": "search",
+        "price_month": 9.0,
+        "price_year": 90.0,
+        "category": "research",
+    },
+    "research_pro": {
+        "name": "Research Pro",
+        "description": "Akademische Quellen, Tiefenanalyse, Exportfunktionen",
+        "icon": "mortarboard",
+        "price_month": 19.0,
+        "price_year": 190.0,
+        "category": "research",
+        "dependencies": ["research_basic"],
+    },
+    "workspaces": {
+        "name": "Workspaces",
+        "description": "Unbegrenzte Workspaces und Projekte",
+        "icon": "folder2",
+        "price_month": 5.0,
+        "price_year": 50.0,
+        "category": "organisation",
+    },
+}
 
 # Sentry
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
