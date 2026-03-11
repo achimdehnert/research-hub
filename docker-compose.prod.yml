@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
     env_file: .env.prod
     extra_hosts:
-      - "devhub_db:host-gateway"
+      - "devhub_db:172.17.0.1"
     depends_on:
       research-hub-db:
         condition: service_healthy
@@ -97,7 +97,7 @@ services:
     restart: unless-stopped
     env_file: .env.prod
     extra_hosts:
-      - "devhub_db:host-gateway"
+      - "devhub_db:172.17.0.1"
     depends_on:
       research-hub-db:
         condition: service_healthy
