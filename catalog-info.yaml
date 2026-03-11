@@ -1,0 +1,26 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: research-hub
+  description: AI-powered research platform for world-building, historical epochs, locations, and names
+  tags: [django, ai, research, celery, pgvector]
+  annotations:
+    github.com/project-slug: achimdehnert/research-hub
+    deployment/server: "88.198.191.108"
+    deployment/path: "/opt/research-hub"
+    deployment/port: "8098"
+    deployment/health-url: "https://research.iil.pet/livez/"
+    deployment/image: "ghcr.io/achimdehnert/research-hub/research-hub-web:latest"
+    deployment/compose-service: "research-hub-web"
+    deployment/db-container: "research_hub_db"
+    deployment/db-name: "research_hub"
+spec:
+  type: service
+  lifecycle: active
+  owner: achimdehnert
+  system: content-publishing
+  domain: content
+  providesApis: []
+  dependsOn:
+    - resource:postgresql
+    - resource:redis
