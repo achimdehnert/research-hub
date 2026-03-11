@@ -58,6 +58,8 @@ services:
     container_name: research_hub_web
     restart: unless-stopped
     env_file: .env.prod
+    extra_hosts:
+      - "devhub_db:host-gateway"
     depends_on:
       research-hub-db:
         condition: service_healthy
@@ -94,6 +96,8 @@ services:
     container_name: research_hub_worker
     restart: unless-stopped
     env_file: .env.prod
+    extra_hosts:
+      - "devhub_db:host-gateway"
     depends_on:
       research-hub-db:
         condition: service_healthy
