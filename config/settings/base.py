@@ -46,6 +46,7 @@ THIRD_PARTY_APPS = [
     "django_celery_results",
     "django_tenancy",
     "django_module_shop",
+    "content_store",  # ADR-130: Shared Content Store
 ]
 
 LOCAL_APPS = [
@@ -93,8 +94,20 @@ DATABASES = {
     "default": dj_database_url.config(
         default="postgresql://research_hub:research_hub@localhost:5432/research_hub",
         conn_max_age=600,
-    )
+    ),
+    # ADR-130: Shared Content Store (cross-app persistence)
+    "content_store": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("CONTENT_STORE_DB_NAME", "content_store"),
+        "USER": os.environ.get("CONTENT_STORE_DB_USER", "content_store"),
+        "PASSWORD": os.environ.get("CONTENT_STORE_DB_PASSWORD", ""),
+        "HOST": os.environ.get("CONTENT_STORE_DB_HOST", "devhub_db"),
+        "PORT": os.environ.get("CONTENT_STORE_DB_PORT", "5432"),
+        "CONN_MAX_AGE": 60,
+    },
 }
+
+DATABASE_ROUTERS = ["content_store.router.ContentStoreRouter"]  # ADR-130
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

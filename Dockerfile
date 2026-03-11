@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ /app/requirements/
+COPY wheels/ /app/wheels/
 
 # Install dependencies.
 # GIT_TOKEN is injected at build time via --secret and is never stored
@@ -24,6 +25,7 @@ RUN --mount=type=secret,id=GIT_TOKEN,required=true \
     && git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
     && pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /app/requirements/prod.txt \
+    && pip install --no-cache-dir /app/wheels/*.whl 2>/dev/null || true \
     && git config --global --remove-section url."https://x-access-token:${GIT_TOKEN}@github.com/" 2>/dev/null || true
 
 COPY entrypoint.sh /entrypoint.sh
