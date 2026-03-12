@@ -61,27 +61,17 @@ def aifw_dashboard(request: HttpRequest) -> HttpResponse:
     # ── Usage stats (last 7 days) ──
     since = timezone.now() - timedelta(days=7)
     usage_qs = AIUsageLog.objects.filter(created_at__gte=since)
-    usage_stats = usage_qs.aggregate(
-        total_calls=Count("id"),
+    agg = usage_qs.aggregate(
         total_tokens=Sum("total_tokens"),
         total_cost=Sum("estimated_cost"),
-        success_count=Count("id", filter=Count("id", output_field=None) or None),
     )
-    # Fix: proper success/error counts
-    usage_stats["success_count"] = usage_qs.filter(
-        success=True
-    ).count()
-    usage_stats["error_count"] = usage_qs.filter(
-        success=False
-    ).count()
-    usage_stats["total_calls"] = usage_qs.count()
-    usage_stats["total_tokens"] = (
-        usage_qs.aggregate(t=Sum("total_tokens"))["t"] or 0
-    )
-    usage_stats["total_cost"] = (
-        usage_qs.aggregate(c=Sum("estimated_cost"))["c"]
-        or Decimal("0.00")
-    )
+    usage_stats = {
+        "total_calls": usage_qs.count(),
+        "total_tokens": agg["total_tokens"] or 0,
+        "total_cost": agg["total_cost"] or Decimal("0.00"),
+        "success_count": usage_qs.filter(success=True).count(),
+        "error_count": usage_qs.filter(success=False).count(),
+    }
 
     # ── Per-action usage breakdown ──
     action_usage = (
