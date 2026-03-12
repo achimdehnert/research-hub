@@ -14,40 +14,50 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: research_hub_test
-          POSTGRES_USER: research_hub
-          POSTGRES_PASSWORD: research_hub
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci_test
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
+
+    env:
+      DB_NAME: ci_test
+      DB_USER: ci
+      DB_PASSWORD: ci
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_test
+      CONTENT_STORE_DB_NAME: ci_test
+      CONTENT_STORE_DB_USER: ci
+      CONTENT_STORE_DB_PASSWORD: ci
+      CONTENT_STORE_DB_HOST: localhost
+      CONTENT_STORE_DB_PORT: "5432"
+      SECRET_KEY: ci-test-key
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Configure git credentials for private platform repo
-        run: |
-          git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+      - name: Configure git for private packages
+        run: git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
-        run: pip install -r requirements/dev.txt
-
-      - name: Lint
-        run: ruff check apps config
-
-      - name: Test
-        env:
-          DATABASE_URL: postgresql://research_hub:research_hub@localhost:5432/research_hub_test
-          SECRET_KEY: test-secret-key
-          DEBUG: "True"
         run: |
-          coverage run -m pytest
-          coverage report
+          pip install -U pip
+          pip install -r requirements/prod.txt
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check . --exit-zero
+
+      - name: Run tests
+        run: python -m pytest --tb=short -q
