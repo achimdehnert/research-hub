@@ -18,7 +18,7 @@ django-celery-beat>=2.5
 django-celery-results>=2.5
 
 # iil-ecosystem
-iil-aifw>=0.6.0,<1
+iil-aifw>=0.9.0,<1
 iil-researchfw>=0.2.4,<1
 iil-authoringfw>=0.6.2,<1
 
