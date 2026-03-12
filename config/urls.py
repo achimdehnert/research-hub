@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.research.views_metrics import metrics_json, metrics_prometheus
+
 
 def healthz(request):
     return JsonResponse({"status": "ok", "service": "research-hub"})
@@ -13,6 +15,8 @@ def healthz(request):
 
 urlpatterns = [
     path("healthz/", healthz, name="healthz"),
+    path("metrics/", metrics_json, name="metrics-json"),
+    path("metrics/prometheus/", metrics_prometheus, name="metrics-prometheus"),
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("research/", include("apps.research.urls")),
