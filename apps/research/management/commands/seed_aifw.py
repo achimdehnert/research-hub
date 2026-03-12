@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 
 PROVIDERS = [
     {
-        "name": "together",
+        "name": "together_ai",
         "display_name": "Together AI",
         "api_key_env_var": "TOGETHER_API_KEY",
         "base_url": "https://api.together.xyz/v1",
@@ -25,7 +25,7 @@ PROVIDERS = [
 
 MODELS = [
     {
-        "provider": "together",
+        "provider": "together_ai",
         "name": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         "display_name": "Llama 3.3 70B Turbo",
         "max_tokens": 4096,
@@ -34,7 +34,7 @@ MODELS = [
         "is_default": True,
     },
     {
-        "provider": "together",
+        "provider": "together_ai",
         "name": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         "display_name": "Llama 3.1 8B Turbo",
         "max_tokens": 2048,
@@ -68,11 +68,11 @@ ACTIONS = [
             "Schnelles Modell für initiale Synthese."
         ),
         "default_model": (
-            "together",
+            "together_ai",
             "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         ),
         "fallback_model": (
-            "together",
+            "together_ai",
             "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         ),
         "max_tokens": 2000,
@@ -99,11 +99,11 @@ ACTIONS = [
             "(Stichpunkte, Fließtext, etc.)."
         ),
         "default_model": (
-            "together",
+            "together_ai",
             "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         ),
         "fallback_model": (
-            "together",
+            "together_ai",
             "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         ),
         "max_tokens": 600,
