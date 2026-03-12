@@ -22,6 +22,9 @@ if [ "$1" = "web" ]; then
     echo "[entrypoint] Running migrations..."
     python manage.py migrate --noinput
 
+    echo "[entrypoint] Seeding aifw (providers, models, actions)..."
+    python manage.py seed_aifw
+
     echo "[entrypoint] Starting gunicorn..."
     exec gunicorn config.wsgi:application \
         --bind 0.0.0.0:8000 \
