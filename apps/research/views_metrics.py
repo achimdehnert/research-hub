@@ -26,17 +26,40 @@ METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "")
 
 
 def _check_auth(request: HttpRequest) -> bool:
-    """Allow staff users or token-based auth for scrapers."""
+    """Allow staff users, token, or HTTP Basic Auth."""
+    # Session auth (logged-in staff)
     if hasattr(request, "user") and request.user.is_authenticated:
         if request.user.is_staff:
             return True
+
+    auth = request.headers.get("Authorization", "")
+
+    # Bearer token
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+        if METRICS_TOKEN and token == METRICS_TOKEN:
+            return True
+
+    # HTTP Basic Auth
+    if auth.startswith("Basic "):
+        import base64
+        try:
+            decoded = base64.b64decode(auth[6:]).decode()
+            username, password = decoded.split(":", 1)
+            from django.contrib.auth import authenticate
+            user = authenticate(
+                request, username=username, password=password,
+            )
+            if user and user.is_staff:
+                return True
+        except Exception:
+            pass
+
+    # Query param token
     token = request.GET.get("token", "")
-    if not token:
-        auth = request.headers.get("Authorization", "")
-        if auth.startswith("Bearer "):
-            token = auth[7:]
     if METRICS_TOKEN and token == METRICS_TOKEN:
         return True
+
     return False
 
 
