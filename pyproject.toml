@@ -10,7 +10,7 @@ ignore = ["E501", "I001"]
 known-first-party = ["apps", "config"]
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings.base"
+DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
 
