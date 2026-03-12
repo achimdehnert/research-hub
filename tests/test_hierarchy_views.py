@@ -4,6 +4,8 @@ Also contains regression tests for known bugs:
 - BUG-001: ResearchProject not linked to Project after form submit
 - BUG-002: ResearchProject.workspace NULL when created via Project
 """
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -199,7 +201,8 @@ def test_should_include_breadcrumb_in_research_create(user, workspace, project, 
 # ── BUG-001: Research not linked to Project after POST ─────────────────────────
 
 @pytest.mark.django_db
-def test_should_link_research_to_project_after_create(user, project, client):
+@patch("apps.research.tasks.run_research_task.delay")
+def test_should_link_research_to_project_after_create(mock_task, user, project, client):
     """BUG-001: ResearchProjectCreateView must persist project FK on form submit.
 
     The view reads `project_id` from POST body, but the form template sends
@@ -232,7 +235,8 @@ def test_should_link_research_to_project_after_create(user, project, client):
 # ── BUG-002: ResearchProject.workspace NULL when created via Project ──────────
 
 @pytest.mark.django_db
-def test_should_set_workspace_on_research_when_created_via_project(user, project, client):
+@patch("apps.research.tasks.run_research_task.delay")
+def test_should_set_workspace_on_research_when_created_via_project(mock_task, user, project, client):
     """BUG-002: ResearchProject.workspace must be set from project.workspace on create.
 
     When a Recherche is created under a Project, both `project` and `workspace`

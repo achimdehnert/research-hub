@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.research.models import ResearchProject, ResearchResult
+from apps.research.models import ResearchProject, ResearchResult, Workspace
 
 User = get_user_model()
 
@@ -17,9 +17,15 @@ def user(db):
 
 
 @pytest.fixture
-def research(user):
+def workspace(user):
+    return Workspace.objects.create(user=user, name="Test WS")
+
+
+@pytest.fixture
+def research(user, workspace):
     return ResearchProject.objects.create(
         user=user,
+        workspace=workspace,
         name="View Test Project",
         query="test query",
         summary_level="medium",
@@ -70,12 +76,11 @@ def test_reformat_htmx_no_summary(user, research, client):
 def test_reformat_htmx_fallback_no_llm(user, research, result_with_summary, client):
     """With no API key, TextReformatter falls back to rule-based transform."""
     client.force_login(user)
-    with patch.dict("os.environ", {"TOGETHER_API_KEY": ""}):
-        response = client.post(
-            f"/research/research/{research.public_id}/reformat/",
-            data={"target_format": "bullets"},
-            HTTP_HX_REQUEST="true",
-        )
+    response = client.post(
+        f"/research/research/{research.public_id}/reformat/",
+        data={"target_format": "bullets"},
+        HTTP_HX_REQUEST="true",
+    )
     assert response.status_code == 200
     assert len(response.content) > 0
 
@@ -87,7 +92,7 @@ def test_reformat_htmx_with_mock_llm(user, research, result_with_summary, client
     mock_result.content = "- Punkt A\n- Punkt B\n- Punkt C"
 
     client.force_login(user)
-    with patch("apps.research.views._make_sync_llm") as mock_factory:
+    with patch("apps.research.views._make_sync_aifw_llm") as mock_factory:
         mock_factory.return_value = lambda p: "- Punkt A\n- Punkt B"
         response = client.post(
             f"/research/research/{research.public_id}/reformat/",
