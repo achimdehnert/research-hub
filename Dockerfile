@@ -33,10 +33,9 @@ RUN chmod +x /entrypoint.sh
 
 COPY . /app
 
-RUN DJANGO_SETTINGS_MODULE=config.settings.base \
-    SECRET_KEY=build-collect-static \
-    DATABASE_URL=sqlite:////tmp/build.db \
-    python manage.py collectstatic --noinput 2>/dev/null || true
+# ADR-083: Build-safe settings, no || true, no dummy env vars
+RUN DJANGO_SETTINGS_MODULE=config.settings.build \
+    python manage.py collectstatic --noinput
 
 RUN groupadd --gid 1000 app \
     && useradd --uid 1000 --gid 1000 --create-home app \
