@@ -129,9 +129,10 @@ class ResearchProjectService:
                 pk=project.pk,
             ).aupdate(status="analysing")
             try:
-                config = aifw.get_action_config(
-                    ACTION_DEEP_ANALYSIS,
-                )
+                from asgiref.sync import sync_to_async
+                config = await sync_to_async(
+                    aifw.get_action_config,
+                )(ACTION_DEEP_ANALYSIS)
                 deep = await self._deep_analyze(
                     project, result,
                 )
