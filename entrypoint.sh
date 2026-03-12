@@ -37,7 +37,9 @@ fi
 
 if [ "$1" = "worker" ]; then
     echo "[entrypoint] Starting Celery worker..."
-    exec celery -A config worker -l info -Q celery
+    exec celery -A config worker -l info -Q celery \
+        --concurrency "${CELERY_CONCURRENCY:-2}" \
+        --max-memory-per-child 200000
 fi
 
 if [ "$1" = "beat" ]; then
