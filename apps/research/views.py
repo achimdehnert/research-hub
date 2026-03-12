@@ -19,7 +19,7 @@ def _tenant_workspace_qs(request):
     qs = Workspace.objects.filter(deleted_at__isnull=True)
     if tenant_id:
         return qs.filter(tenant_id=tenant_id)
-    return qs.filter(user=request.user)
+    return qs.filter(user=request.user, tenant_id__isnull=True)
 
 
 # ── Workspace views ─────────────────────────────────────────────────────
