@@ -47,6 +47,7 @@ THIRD_PARTY_APPS = [
     "django_tenancy",
     "django_module_shop",
     "content_store",  # ADR-130: Shared Content Store
+    "aifw",  # LLM routing, model management, secrets
 ]
 
 LOCAL_APPS = [

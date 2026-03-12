@@ -1,8 +1,6 @@
 """Research views — HTMX-powered."""
 from __future__ import annotations
 
-import os
-
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -274,7 +272,7 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     try:
         from authoringfw.text import ReformatTask, TextReformatter
 
-        llm_fn = _make_sync_llm(os.environ.get("TOGETHER_API_KEY", ""))
+        llm_fn = _make_sync_aifw_llm()
         reformatter = TextReformatter(llm_fn=llm_fn)
         reformat_result = reformatter.reformat(
             ReformatTask(
@@ -295,25 +293,15 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
     return HttpResponse(html)
 
 
-def _make_sync_llm(api_key: str):
-    """Sync LLM callable wrapping Together AI for TextReformatter."""
-    import httpx
+def _make_sync_aifw_llm():
+    """Sync LLM callable via aifw for TextReformatter."""
+    import aifw
 
     def _call(prompt: str) -> str:
-        if not api_key:
-            return ""
-        resp = httpx.post(
-            "https://api.together.xyz/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={
-                "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600,
-                "temperature": 0.3,
-            },
-            timeout=30.0,
+        result = aifw.sync_completion(
+            action_code="research.reformat",
+            messages=[{"role": "user", "content": prompt}],
         )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+        return (result.content or "").strip()
 
     return _call
