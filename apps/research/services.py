@@ -55,6 +55,97 @@ def _make_aifw_llm_fn(action_code: str = ACTION_SUMMARIZE):
     return _call
 
 
+def _publish_to_content_store(
+    project: ResearchProject,
+    result: ResearchResult,
+) -> None:
+    """Publish research results to content-store (ADR-130).
+
+    Creates/updates ContentItem entries for summary and deep
+    analysis so other hubs can access them.
+    """
+    import hashlib
+
+    try:
+        from content_store.models import ContentItem
+    except ImportError:
+        logger.debug("content_store not available, skipping")
+        return
+
+    db = "content_store"
+    tenant_id = 0
+    ws = project.workspace
+    if ws and ws.tenant_id:
+        # Use first 8 hex digits of UUID as integer
+        tenant_id = int(str(ws.tenant_id).replace("-", "")[:8], 16)
+
+    ref = str(project.public_id)
+
+    # --- Summary ---
+    if result.summary:
+        sha = hashlib.sha256(
+            result.summary.encode(),
+        ).hexdigest()
+        ContentItem.objects.using(db).update_or_create(
+            source="research-hub",
+            type="summary",
+            ref_id=ref,
+            defaults={
+                "tenant_id": tenant_id,
+                "content": result.summary,
+                "sha256": sha,
+                "version": 1,
+                "meta": {
+                    "query": project.query,
+                    "language": project.language,
+                    "research_type": project.research_type,
+                    "depth": project.depth,
+                    "source_count": len(
+                        result.sources_json or [],
+                    ),
+                },
+                "model_used": "aifw:research.summarize",
+                "prompt_key": "",
+            },
+        )
+        logger.info(
+            "Published summary to content-store: %s", ref,
+        )
+
+    # --- Deep Analysis ---
+    if result.deep_analysis:
+        sha = hashlib.sha256(
+            result.deep_analysis.encode(),
+        ).hexdigest()
+        ContentItem.objects.using(db).update_or_create(
+            source="research-hub",
+            type="deep_analysis",
+            ref_id=ref,
+            defaults={
+                "tenant_id": tenant_id,
+                "content": result.deep_analysis,
+                "sha256": sha,
+                "version": 1,
+                "meta": {
+                    "query": project.query,
+                    "language": project.language,
+                    "model": (
+                        result.deep_analysis_model or ""
+                    ),
+                },
+                "model_used": (
+                    result.deep_analysis_model
+                    or "aifw:research.deep_analysis"
+                ),
+                "prompt_key": "",
+            },
+        )
+        logger.info(
+            "Published deep_analysis to content-store: %s",
+            ref,
+        )
+
+
 class ResearchProjectService:
     """Business logic for ResearchProject — wraps iil-researchfw.
 
@@ -154,6 +245,24 @@ class ResearchProjectService:
         ).aupdate(
             status="done" if output.success else "error",
         )
+
+        # --- Publish to content-store (ADR-130) ---
+        if output.success:
+            try:
+                from asgiref.sync import sync_to_async
+                # Re-fetch result to get deep_analysis if updated
+                fresh = await ResearchResult.objects.filter(
+                    pk=result.pk,
+                ).afirst()
+                await sync_to_async(
+                    _publish_to_content_store,
+                )(project, fresh or result)
+            except Exception:
+                logger.exception(
+                    "content-store publish failed for %s",
+                    project.pk,
+                )
+
         return result
 
     async def _deep_analyze(
