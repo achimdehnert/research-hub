@@ -180,6 +180,27 @@
         </div>
       </div>
 
+      <div class="card mb-3" style="border-color:#6366f1;border-style:dashed">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <h6 class="mb-1 fw-semibold" style="color:#a5b4fc">
+              <i class="bi bi-cpu me-2"></i>Tiefe Analyse (2-Stufen)
+            </h6>
+            <p class="text-muted small mb-0">
+              <strong>Stufe 1:</strong> Recherche + Zusammenfassung mit Llama 3.3 70B<br>
+              <strong>Stufe 2:</strong> Tiefenanalyse mit
+              <span class="badge" style="background:#10a37f;color:#fff;font-size:.7rem">OpenAI gpt-4.1</span>
+              — Kernaussagen, Widersprüche, Wissenslücken, Empfehlungen
+            </p>
+          </div>
+          <div class="form-check form-switch ms-4">
+            <input class="form-check-input" type="checkbox" role="switch"
+              name="use_deep_analysis" id="id_use_deep_analysis" value="true"
+              style="width:3em;height:1.5em">
+          </div>
+        </div>
+      </div>
+
       {% if form.errors %}
       <div class="alert alert-danger py-2 small mb-3">
         {% for field, errors in form.errors.items %}

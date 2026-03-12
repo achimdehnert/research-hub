@@ -165,11 +165,16 @@ class ResearchProject(models.Model):
     citation_style = models.CharField(
         max_length=20, choices=CITATION_STYLE_CHOICES, default="none"
     )
+    use_deep_analysis = models.BooleanField(
+        default=False,
+        help_text="2-Stufen: Erst Llama-Zusammenfassung, dann OpenAI-Tiefenanalyse.",
+    )
     status = models.CharField(
         max_length=20,
         choices=[
             ("draft", "Draft"),
             ("running", "Running"),
+            ("analysing", "Analysing"),
             ("done", "Done"),
             ("error", "Error"),
         ],
@@ -203,6 +208,14 @@ class ResearchResult(models.Model):
     sources_json = models.JSONField(default=list)
     findings_json = models.JSONField(default=list)
     summary = models.TextField(blank=True)
+    deep_analysis = models.TextField(
+        blank=True,
+        help_text="Tiefenanalyse durch OpenAI (Stufe 2).",
+    )
+    deep_analysis_model = models.CharField(
+        max_length=100, blank=True,
+        help_text="Modell für die Tiefenanalyse, z.B. gpt-4.1",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
