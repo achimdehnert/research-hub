@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% block title %}aifw Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-0"><i class="bi bi-cpu me-2"></i>aifw Dashboard</h2>
+    <p class="text-muted small mb-0">LLM-Provider, Modelle, Actions und Nutzungsstatistiken</p>
+  </div>
+  <a href="/admin/aifw/" class="btn btn-outline-secondary btn-sm" target="_blank">
+    <i class="bi bi-gear me-1"></i>Django Admin
+  </a>
+</div>
+
+{# ── Usage Stats (7 Tage) ── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div style="font-size:1.8rem;font-weight:700;color:#6366f1">{{ usage_stats.total_calls }}</div>
+      <div class="text-muted small">API-Calls (7d)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div style="font-size:1.8rem;font-weight:700;color:#a5b4fc">
+        {% if usage_stats.total_tokens %}{{ usage_stats.total_tokens|floatformat:0 }}{% else %}0{% endif %}
+      </div>
+      <div class="text-muted small">Tokens (7d)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div style="font-size:1.8rem;font-weight:700;color:#4ade80">${{ usage_stats.total_cost|floatformat:4 }}</div>
+      <div class="text-muted small">Kosten (7d)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      {% if usage_stats.error_count %}
+      <div style="font-size:1.8rem;font-weight:700;color:#f87171">{{ usage_stats.error_count }}</div>
+      {% else %}
+      <div style="font-size:1.8rem;font-weight:700;color:#4ade80">0</div>
+      {% endif %}
+      <div class="text-muted small">Fehler (7d)</div>
+    </div>
+  </div>
+</div>
+
+{# ── Provider Cards ── #}
+<h4 class="fw-bold mb-3"><i class="bi bi-cloud me-2"></i>Provider</h4>
+<div class="row g-3 mb-4">
+  {% for p in providers %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="card-title fw-bold mb-0">
+            {% if p.obj.name == "openai" %}
+            <i class="bi bi-stars me-1" style="color:#10a37f"></i>
+            {% elif p.obj.name == "together" %}
+            <i class="bi bi-lightning me-1" style="color:#f59e0b"></i>
+            {% else %}
+            <i class="bi bi-cloud me-1" style="color:#6366f1"></i>
+            {% endif %}
+            {{ p.obj.display_name|default:p.obj.name }}
+          </h5>
+          <span id="provider-status-{{ p.obj.pk }}"
+                hx-swap="innerHTML"
+                style="cursor:pointer"
+                hx-post="{% url 'research:aifw-toggle-provider' %}"
+                hx-vals='{"provider_id": "{{ p.obj.pk }}"}'
+                hx-target="#provider-status-{{ p.obj.pk }}"
+                title="Klicken zum Umschalten">
+            {% if p.obj.is_active %}
+            <span style="color:#4ade80"><i class="bi bi-check-circle-fill"></i> Aktiv</span>
+            {% else %}
+            <span style="color:#f87171"><i class="bi bi-x-circle"></i> Inaktiv</span>
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="mb-2">
+          <small class="text-muted">API Key:</small>
+          {% if p.key_set %}
+          <span class="badge" style="background:#14532d;color:#4ade80">
+            <i class="bi bi-key-fill me-1"></i>{{ p.key_preview }}
+          </span>
+          {% else %}
+          <span class="badge" style="background:#450a0a;color:#f87171">
+            <i class="bi bi-exclamation-triangle me-1"></i>Nicht gesetzt
+          </span>
+          {% endif %}
+          <br><small class="text-muted" style="font-size:.7rem">{{ p.key_env }}</small>
+        </div>
+
+        {% if p.obj.base_url %}
+        <div class="mb-2">
+          <small class="text-muted">Base URL:</small>
+          <code style="font-size:.75rem;color:#a5b4fc">{{ p.obj.base_url }}</code>
+        </div>
+        {% endif %}
+
+        <div>
+          <span class="badge" style="background:#1e2035;color:#a5b4fc">
+            <i class="bi bi-box me-1"></i>{{ p.model_count }} Modell{{ p.model_count|pluralize:"e" }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="card text-center py-4">
+      <p class="text-muted mb-0"><i class="bi bi-cloud-slash" style="font-size:2rem"></i></p>
+      <p class="text-muted">Keine Provider konfiguriert. Führe <code>seed_aifw</code> aus.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Models Table ── #}
+<h4 class="fw-bold mb-3"><i class="bi bi-box me-2"></i>Modelle</h4>
+<div class="card mb-4">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="background:transparent">
+      <thead>
+        <tr style="border-color:#2d3148">
+          <th>Modell</th>
+          <th>Provider</th>
+          <th class="text-center">Max Tokens</th>
+          <th class="text-center">Vision</th>
+          <th class="text-center">Tools</th>
+          <th class="text-end">Input $/M</th>
+          <th class="text-end">Output $/M</th>
+          <th class="text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in models %}
+        <tr style="border-color:#2d3148">
+          <td>
+            <strong>{{ m.display_name|default:m.name }}</strong>
+            {% if m.is_default %}
+            <span class="badge" style="background:#1e3a5f;color:#60a5fa;font-size:.65rem">Default</span>
+            {% endif %}
+            <br><code style="font-size:.7rem;color:#94a3b8">{{ m.name }}</code>
+          </td>
+          <td>{{ m.provider.display_name|default:m.provider.name }}</td>
+          <td class="text-center">{{ m.max_tokens|default:"-" }}</td>
+          <td class="text-center">
+            {% if m.supports_vision %}<i class="bi bi-eye-fill" style="color:#4ade80"></i>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">
+            {% if m.supports_tools %}<i class="bi bi-tools" style="color:#4ade80"></i>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end">${{ m.input_cost_per_million|floatformat:2 }}</td>
+          <td class="text-end">${{ m.output_cost_per_million|floatformat:2 }}</td>
+          <td class="text-center">
+            {% if m.is_active %}
+            <span style="color:#4ade80"><i class="bi bi-check-circle-fill"></i></span>
+            {% else %}
+            <span style="color:#f87171"><i class="bi bi-x-circle"></i></span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Actions Table ── #}
+<h4 class="fw-bold mb-3"><i class="bi bi-lightning me-2"></i>Actions</h4>
+<div class="card mb-4">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="background:transparent">
+      <thead>
+        <tr style="border-color:#2d3148">
+          <th>Code</th>
+          <th>Name</th>
+          <th>Default-Modell</th>
+          <th>Fallback</th>
+          <th class="text-center">Temp</th>
+          <th class="text-center">Max Tok</th>
+          <th class="text-center">Budget/d</th>
+          <th class="text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in actions %}
+        <tr style="border-color:#2d3148">
+          <td><code style="color:#a5b4fc">{{ a.code }}</code></td>
+          <td>{{ a.name }}</td>
+          <td>
+            {% if a.default_model %}
+            <span class="badge" style="background:#1e2035;color:#e2e8f0">
+              {{ a.default_model.display_name|default:a.default_model.name }}
+            </span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if a.fallback_model %}
+            <span class="badge" style="background:#1e2035;color:#94a3b8">
+              {{ a.fallback_model.display_name|default:a.fallback_model.name }}
+            </span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">{{ a.temperature|floatformat:1 }}</td>
+          <td class="text-center">{{ a.max_tokens }}</td>
+          <td class="text-center">
+            {% if a.budget_per_day %}${{ a.budget_per_day|floatformat:2 }}{% else %}∞{% endif %}
+          </td>
+          <td class="text-center"
+              id="action-status-{{ a.pk }}"
+              hx-swap="innerHTML"
+              style="cursor:pointer"
+              hx-post="{% url 'research:aifw-toggle-action' %}"
+              hx-vals='{"action_id": "{{ a.pk }}"}'
+              hx-target="#action-status-{{ a.pk }}"
+              title="Klicken zum Umschalten">
+            {% if a.is_active %}
+            <span style="color:#4ade80"><i class="bi bi-check-circle-fill"></i> Aktiv</span>
+            {% else %}
+            <span style="color:#f87171"><i class="bi bi-x-circle"></i> Inaktiv</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Per-Action Usage Breakdown ── #}
+{% if action_usage %}
+<h4 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Nutzung nach Action (7 Tage)</h4>
+<div class="card mb-4">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="background:transparent">
+      <thead>
+        <tr style="border-color:#2d3148">
+          <th>Action</th>
+          <th class="text-end">Calls</th>
+          <th class="text-end">Tokens</th>
+          <th class="text-end">Kosten</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for au in action_usage %}
+        <tr style="border-color:#2d3148">
+          <td>
+            <code style="color:#a5b4fc">{{ au.action_type__code }}</code>
+            <small class="text-muted ms-2">{{ au.action_type__name }}</small>
+          </td>
+          <td class="text-end">{{ au.calls }}</td>
+          <td class="text-end">{{ au.tokens|default:0|floatformat:0 }}</td>
+          <td class="text-end">${{ au.cost|default:0|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{# ── Recent Errors ── #}
+{% if recent_errors %}
+<h4 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle me-2" style="color:#f87171"></i>Letzte Fehler</h4>
+<div class="card mb-4">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="background:transparent">
+      <thead>
+        <tr style="border-color:#2d3148">
+          <th>Zeitpunkt</th>
+          <th>Action</th>
+          <th>Modell</th>
+          <th>Fehler</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in recent_errors %}
+        <tr style="border-color:#2d3148">
+          <td><small>{{ err.created_at|date:"d.m. H:i" }}</small></td>
+          <td><code style="color:#a5b4fc">{{ err.action_type.code }}</code></td>
+          <td>{{ err.model_used.display_name|default:"-" }}</td>
+          <td><small class="text-danger">{{ err.error_message|truncatechars:80 }}</small></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.research import views
+from apps.research import views_aifw_admin as aifw_views
 
 app_name = "research"
 
@@ -44,6 +45,22 @@ urlpatterns = [
         "research/<uuid:public_id>/reformat/",
         views.summary_reformat_htmx,
         name="summary-reformat",
+    ),
+    # aifw admin dashboard (staff-only)
+    path(
+        "admin/aifw/",
+        aifw_views.aifw_dashboard,
+        name="aifw-dashboard",
+    ),
+    path(
+        "admin/aifw/toggle-action/",
+        aifw_views.aifw_toggle_action,
+        name="aifw-toggle-action",
+    ),
+    path(
+        "admin/aifw/toggle-provider/",
+        aifw_views.aifw_toggle_provider,
+        name="aifw-toggle-provider",
     ),
     # Research list (used by base.html nav)
     path("research/", views.ResearchProjectListView.as_view(), name="research-list"),
