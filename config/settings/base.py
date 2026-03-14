@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "django_tenancy.middleware.SubdomainTenantMiddleware",
+    "apps.tenancy.middleware.ResearchHubTenantMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

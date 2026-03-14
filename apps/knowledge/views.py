@@ -1,7 +1,7 @@
-"""Outline webhook endpoint with HMAC-SHA256 verification (ADR-145, Review-Fix B2).
+"""Outline webhook endpoint with HMAC-SHA256 verification.
 
+ADR-145 Phase 9+12: HMAC verification, dedup, lazy secret.
 Security: HMAC signature verified before any processing (ADR-050).
-Secret via os.environ (loaded by python-dotenv in settings).
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import json
 import logging
 import os
 
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -22,7 +23,12 @@ from apps.knowledge.tasks import (
 
 logger = logging.getLogger(__name__)
 
-WEBHOOK_SECRET = os.environ.get("OUTLINE_WEBHOOK_SECRET", "")
+DEDUP_TTL = 5  # seconds — Outline fires create+publish simultaneously
+
+
+def _get_webhook_secret() -> str:
+    """Lazy-load secret (allows rotation without restart)."""
+    return os.environ.get("OUTLINE_WEBHOOK_SECRET", "")
 
 SUPPORTED_EVENTS = {
     "documents.create",
@@ -85,11 +91,12 @@ def outline_webhook(request):
         or request.headers.get("X-Outline-Signature", "")
     )
 
-    if not _verify_hmac(request.body, signature, WEBHOOK_SECRET):
+    secret = _get_webhook_secret()
+    if not _verify_hmac(request.body, signature, secret):
         logger.warning(
             "Outline webhook: HMAC failed sig=%s secret_set=%s",
             signature[:20] if signature else "EMPTY",
-            bool(WEBHOOK_SECRET),
+            bool(secret),
         )
         return JsonResponse(
             {"error": "Invalid signature"}, status=401,
@@ -132,12 +139,17 @@ def outline_webhook(request):
         "data": data,
     }
 
+    # Dedup: skip if same doc+event processed within TTL
+    dedup_key = f"outline_wh:{doc_id}:{event}"
+    if cache.get(dedup_key):
+        logger.debug("Outline webhook: dedup skip %s %s", event, doc_id)
+        return JsonResponse({"status": "dedup", "event": event})
+    cache.set(dedup_key, 1, DEDUP_TTL)
+
     if event in ("documents.delete", "documents.archive"):
         delete_knowledge_document_task.delay(str(doc_id))
     else:
         sync_knowledge_document_task.delay(normalized)
 
-    logger.info(
-        "Outline webhook: %s for %s", event, doc_id,
-    )
+    logger.info("Outline webhook: %s for %s", event, doc_id)
     return JsonResponse({"status": "accepted", "event": event})

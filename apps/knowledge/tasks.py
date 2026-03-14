@@ -1,5 +1,6 @@
-"""Celery tasks for Outline → research-hub sync (ADR-145, Review-Fix K2).
+"""Celery tasks for Outline → research-hub sync (ADR-145).
 
+Phase 12: content-hash skip, exponential backoff, rate limiting.
 Uses async_to_sync pattern for Celery worker context (ADR-062).
 AI enrichment via aifw action code `knowledge.enrich` (M2, ADR-095).
 """
@@ -31,8 +32,9 @@ def sync_knowledge_document_task(self, payload: dict[str, Any]) -> str:
 
     try:
         doc = sync_document_from_outline(payload)
-        # Chain AI enrichment (Phase 10)
-        enrich_knowledge_document_task.delay(doc.pk)
+        # Chain AI enrichment only if content changed
+        if getattr(doc, "_content_changed", True):
+            enrich_knowledge_document_task.delay(doc.pk)
         return f"synced: {doc.title} (id={doc.pk})"
     except Exception as exc:
         logger.exception("sync_knowledge_document_task failed")
@@ -59,9 +61,13 @@ def delete_knowledge_document_task(self, outline_id: str) -> str:
 
 @shared_task(
     bind=True,
-    max_retries=2,
-    default_retry_delay=60,
+    max_retries=3,
     name="knowledge.enrich_document",
+    rate_limit="10/m",
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    retry_backoff_max=600,
+    retry_jitter=True,
 )
 def enrich_knowledge_document_task(self, doc_pk: int) -> str:
     """AI-enrich a KnowledgeDocument via aifw (ADR-145 Phase 10).
@@ -129,8 +135,8 @@ Antworte EXAKT in diesem JSON-Format:
             "Enrichment JSON parse failed for %s: %s",
             doc.title, content[:200],
         )
-        raise self.retry(exc=exc) from exc
+        raise
     except Exception as exc:
         mark_enrichment_failed(doc, str(exc))
         logger.exception("enrich_knowledge_document_task failed")
-        raise self.retry(exc=exc) from exc
+        raise
