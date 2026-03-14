@@ -55,6 +55,7 @@ LOCAL_APPS = [
     "apps.research",
     "apps.tenancy",
     "apps.documents",  # ADR-144: Paperless-ngx metadata sync
+    "apps.knowledge",  # ADR-145: Outline Wiki sync + AI enrichment
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

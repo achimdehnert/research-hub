@@ -25,5 +25,6 @@ urlpatterns = [
     path("api/v1/", include("apps.research.api.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("knowledge/", include("apps.knowledge.urls")),
     path("", include("apps.accounts.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
