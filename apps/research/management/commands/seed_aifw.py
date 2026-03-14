@@ -109,6 +109,24 @@ ACTIONS = [
         "max_tokens": 600,
         "temperature": 0.3,
     },
+    {
+        "code": "knowledge.enrich",
+        "name": "Knowledge-Dokument Enrichment",
+        "description": (
+            "ADR-145: AI-Enrichment für Outline-Dokumente. "
+            "Generiert Summary + Keywords aus Markdown-Inhalt."
+        ),
+        "default_model": (
+            "together_ai",
+            "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        ),
+        "fallback_model": (
+            "together_ai",
+            "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        ),
+        "max_tokens": 800,
+        "temperature": 0.2,
+    },
 ]
 
 
