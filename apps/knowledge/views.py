@@ -139,8 +139,9 @@ def outline_webhook(request):
         "data": data,
     }
 
-    # Dedup: skip if same doc+event processed within TTL
-    dedup_key = f"outline_wh:{doc_id}:{event}"
+    # Dedup: skip if same doc processed within TTL
+    # Outline fires create+publish simultaneously
+    dedup_key = f"outline_wh:{doc_id}"
     if cache.get(dedup_key):
         logger.debug("Outline webhook: dedup skip %s %s", event, doc_id)
         return JsonResponse({"status": "dedup", "event": event})
