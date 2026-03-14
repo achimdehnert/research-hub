@@ -101,6 +101,10 @@ def outline_webhook(request):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     event = payload.get("event", "")
+    logger.info(
+        "Outline webhook payload: event=%s keys=%s",
+        event, list(payload.keys()),
+    )
 
     if event not in SUPPORTED_EVENTS:
         logger.debug("Outline webhook: ignoring event %s", event)
