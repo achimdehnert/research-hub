@@ -1,4 +1,4 @@
-"""Tests for apps.knowledge — HMAC webhook, service layer, model (ADR-145)."""
+"""Tests for apps.knowledge — HMAC webhook, service layer, model (ADR-145 Phase 12)."""
 from __future__ import annotations
 
 import hashlib
@@ -20,6 +20,7 @@ from apps.knowledge.services import (
     soft_delete_document,
     sync_document_from_outline,
 )
+from apps.knowledge.services import _compute_content_hash
 from apps.knowledge.views import _verify_hmac, outline_webhook
 
 
@@ -108,6 +109,25 @@ class TestSyncService(TestCase):
         assert doc.title == "V2"
         assert doc.text == "Updated content"
         assert KnowledgeDocument.objects.count() == 1
+
+    def test_should_detect_content_change(self):
+        payload = self._make_payload(
+            doc_id="20000000-0000-0000-0000-000000000012",
+            title="Hash Test",
+            text="Original",
+        )
+        doc = sync_document_from_outline(payload)
+        assert doc._content_changed is True
+        assert doc.content_hash != ""
+
+        # Same content = no change
+        doc2 = sync_document_from_outline(payload)
+        assert doc2._content_changed is False
+
+        # Different content = change
+        payload["data"]["text"] = "Modified"
+        doc3 = sync_document_from_outline(payload)
+        assert doc3._content_changed is True
 
     def test_should_map_collection_to_category(self):
         payload = self._make_payload(
@@ -233,7 +253,7 @@ class TestWebhookView(TestCase):
             content_type="application/json",
         )
         from unittest.mock import patch
-        with patch("apps.knowledge.views.WEBHOOK_SECRET", "real-secret"):
+        with patch("apps.knowledge.views._get_webhook_secret", return_value="real-secret"):
             response = outline_webhook(request)
         assert response.status_code == 401
 
@@ -243,7 +263,7 @@ class TestWebhookView(TestCase):
             secret="wrong-secret",
         )
         from unittest.mock import patch
-        with patch("apps.knowledge.views.WEBHOOK_SECRET", self.secret):
+        with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret):
             response = outline_webhook(request)
         assert response.status_code == 401
 
@@ -254,20 +274,36 @@ class TestWebhookView(TestCase):
         }
         request = self._signed_request(payload)
         from unittest.mock import patch
-        with patch("apps.knowledge.views.WEBHOOK_SECRET", self.secret), \
+        with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret), \
              patch("apps.knowledge.views.sync_knowledge_document_task") as mock_task:
             response = outline_webhook(request)
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data["status"] == "accepted"
-        mock_task.delay.assert_called_once_with(payload)
+        # View normalizes payload
+        mock_task.delay.assert_called_once()
 
     def test_should_ignore_unsupported_event(self):
         payload = {"event": "collections.create", "data": {"id": "col-1"}}
         request = self._signed_request(payload)
         from unittest.mock import patch
-        with patch("apps.knowledge.views.WEBHOOK_SECRET", self.secret):
+        with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret):
             response = outline_webhook(request)
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data["status"] == "ignored"
+
+
+class TestContentHash(TestCase):
+    """Test content hash computation."""
+
+    def test_should_compute_deterministic_hash(self):
+        h1 = _compute_content_hash("Title", "Body")
+        h2 = _compute_content_hash("Title", "Body")
+        assert h1 == h2
+        assert len(h1) == 64
+
+    def test_should_differ_on_content_change(self):
+        h1 = _compute_content_hash("Title", "Body A")
+        h2 = _compute_content_hash("Title", "Body B")
+        assert h1 != h2

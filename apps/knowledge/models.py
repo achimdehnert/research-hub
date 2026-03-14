@@ -77,6 +77,12 @@ class KnowledgeDocument(models.Model):
         help_text="Hub names, e.g. ['research-hub', 'risk-hub'].",
     )
 
+    # Content hash for change detection (Phase 12)
+    content_hash = models.CharField(
+        max_length=64, blank=True,
+        help_text="SHA-256 of title+text for change detection.",
+    )
+
     # AI Enrichment (Phase 10)
     summary = models.TextField(blank=True, help_text="AI-generated summary.")
     keywords = ArrayField(
