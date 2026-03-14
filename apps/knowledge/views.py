@@ -34,15 +34,42 @@ SUPPORTED_EVENTS = {
 
 
 def _verify_hmac(body: bytes, signature: str, secret: str) -> bool:
-    """Verify HMAC-SHA256 signature from Outline webhook."""
+    """Verify HMAC-SHA256 signature from Outline webhook.
+
+    Outline sends: t=<timestamp>,s=<hex>
+    HMAC is computed over: "{timestamp}.{body}"
+    Falls back to sha256=<hex> format for compatibility.
+    """
     if not secret or not signature:
         return False
-    expected = hmac.new(
-        secret.encode("utf-8"),
-        body,
-        hashlib.sha256,
-    ).hexdigest()
-    return hmac.compare_digest(f"sha256={expected}", signature)
+
+    # Outline format: t=<ts>,s=<hex>
+    if signature.startswith("t="):
+        parts = dict(
+            p.split("=", 1)
+            for p in signature.split(",")
+            if "=" in p
+        )
+        ts = parts.get("t", "")
+        sig_hex = parts.get("s", "")
+        if not ts or not sig_hex:
+            return False
+        msg = f"{ts}.".encode() + body
+        expected = hmac.new(
+            secret.encode(), msg, hashlib.sha256,
+        ).hexdigest()
+        return hmac.compare_digest(expected, sig_hex)
+
+    # Fallback: sha256=<hex>
+    if signature.startswith("sha256="):
+        expected = hmac.new(
+            secret.encode(), body, hashlib.sha256,
+        ).hexdigest()
+        return hmac.compare_digest(
+            f"sha256={expected}", signature,
+        )
+
+    return False
 
 
 @csrf_exempt

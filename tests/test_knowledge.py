@@ -189,6 +189,21 @@ class TestHMACVerification(TestCase):
     def test_should_reject_empty_signature(self):
         assert _verify_hmac(b"body", "", "secret") is False
 
+    def test_should_verify_outline_timestamp_format(self):
+        secret = "test-webhook-secret-12345"
+        body = b'{"event": "documents.create"}'
+        ts = "1773510631094"
+        msg = f"{ts}.".encode() + body
+        sig_hex = hmac.new(
+            secret.encode(), msg, hashlib.sha256,
+        ).hexdigest()
+        sig = f"t={ts},s={sig_hex}"
+        assert _verify_hmac(body, sig, secret) is True
+
+    def test_should_reject_wrong_outline_timestamp_sig(self):
+        sig = "t=12345,s=deadbeef"
+        assert _verify_hmac(b"body", sig, "secret") is False
+
 
 class TestWebhookView(TestCase):
     """Test outline_webhook view."""
