@@ -64,7 +64,12 @@ class TestKnowledgeDocumentModel(TestCase):
 class TestSyncService(TestCase):
     """Test sync_document_from_outline service function."""
 
-    def _make_payload(self, doc_id="aaa-bbb", title="Test", text="# Test"):
+    def _make_payload(
+        self,
+        doc_id="a0a0a0a0-b1b1-c2c2-d3d3-e4e4e4e4e4e4",
+        title="Test",
+        text="# Test",
+    ):
         return {
             "event": "documents.create",
             "data": {
@@ -78,18 +83,22 @@ class TestSyncService(TestCase):
         }
 
     def test_should_create_new_document(self):
+        uid = "10000000-0000-0000-0000-000000000001"
         payload = self._make_payload(
-            doc_id="new-doc-id-1234",
+            doc_id=uid,
             title="New Runbook",
         )
         doc = sync_document_from_outline(payload)
         assert doc.title == "New Runbook"
         assert doc.category == KnowledgeCategory.RUNBOOK
-        assert str(doc.outline_id) == "new-doc-id-1234"
+        assert str(doc.outline_id) == uid
         assert KnowledgeDocument.objects.count() == 1
 
     def test_should_update_existing_document(self):
-        payload = self._make_payload(doc_id="update-doc-1234", title="V1")
+        payload = self._make_payload(
+            doc_id="20000000-0000-0000-0000-000000000002",
+            title="V1",
+        )
         sync_document_from_outline(payload)
 
         payload["data"]["title"] = "V2"
@@ -101,7 +110,9 @@ class TestSyncService(TestCase):
         assert KnowledgeDocument.objects.count() == 1
 
     def test_should_map_collection_to_category(self):
-        payload = self._make_payload(doc_id="lesson-doc-1234")
+        payload = self._make_payload(
+            doc_id="30000000-0000-0000-0000-000000000003",
+        )
         payload["data"]["collectionId"] = "db8291c2-f135-4834-878e-224db5673ab6"
         doc = sync_document_from_outline(payload)
         assert doc.category == KnowledgeCategory.LESSON
@@ -115,17 +126,20 @@ class TestSoftDelete(TestCase):
     """Test soft_delete_document service function."""
 
     def test_should_soft_delete_existing(self):
+        uid = "40000000-0000-0000-0000-000000000004"
         KnowledgeDocument.objects.create(
-            outline_id="del-doc-1234",
+            outline_id=uid,
             title="To Delete",
             text="Content",
         )
-        assert soft_delete_document("del-doc-1234") is True
-        doc = KnowledgeDocument.objects.get(outline_id="del-doc-1234")
+        assert soft_delete_document(uid) is True
+        doc = KnowledgeDocument.objects.get(outline_id=uid)
         assert doc.deleted_at is not None
 
     def test_should_return_false_for_missing(self):
-        assert soft_delete_document("nonexistent-id") is False
+        assert soft_delete_document(
+            "50000000-0000-0000-0000-000000000005",
+        ) is False
 
 
 class TestEnrichment(TestCase):
@@ -133,7 +147,7 @@ class TestEnrichment(TestCase):
 
     def test_should_mark_enrichment_complete(self):
         doc = KnowledgeDocument.objects.create(
-            outline_id="enrich-doc-1234",
+            outline_id="60000000-0000-0000-0000-000000000006",
             title="Enrich Me",
             text="Content",
         )
@@ -146,7 +160,7 @@ class TestEnrichment(TestCase):
 
     def test_should_mark_enrichment_failed(self):
         doc = KnowledgeDocument.objects.create(
-            outline_id="fail-doc-1234",
+            outline_id="70000000-0000-0000-0000-000000000007",
             title="Fail Me",
             text="Content",
         )
