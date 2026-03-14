@@ -53,10 +53,17 @@ def outline_webhook(request):
     Verifies HMAC-SHA256 signature, then dispatches to Celery tasks.
     Events: documents.create, documents.update, documents.delete.
     """
-    signature = request.headers.get("X-Outline-Signature", "")
+    signature = (
+        request.headers.get("Outline-Signature", "")
+        or request.headers.get("X-Outline-Signature", "")
+    )
 
     if not _verify_hmac(request.body, signature, WEBHOOK_SECRET):
-        logger.warning("Outline webhook: HMAC verification failed")
+        logger.warning(
+            "Outline webhook: HMAC failed sig=%s secret_set=%s",
+            signature[:20] if signature else "EMPTY",
+            bool(WEBHOOK_SECRET),
+        )
         return JsonResponse(
             {"error": "Invalid signature"}, status=401,
         )
