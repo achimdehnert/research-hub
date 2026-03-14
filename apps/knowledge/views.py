@@ -1,7 +1,7 @@
 """Outline webhook endpoint with HMAC-SHA256 verification (ADR-145, Review-Fix B2).
 
 Security: HMAC signature verified before any processing (ADR-050).
-Secret via decouple.config("OUTLINE_WEBHOOK_SECRET").
+Secret via os.environ (loaded by python-dotenv in settings).
 """
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 
-from decouple import config
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -22,7 +22,7 @@ from apps.knowledge.tasks import (
 
 logger = logging.getLogger(__name__)
 
-WEBHOOK_SECRET = config("OUTLINE_WEBHOOK_SECRET", default="")
+WEBHOOK_SECRET = os.environ.get("OUTLINE_WEBHOOK_SECRET", "")
 
 SUPPORTED_EVENTS = {
     "documents.create",
