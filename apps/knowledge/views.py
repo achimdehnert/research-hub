@@ -101,24 +101,43 @@ def outline_webhook(request):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     event = payload.get("event", "")
-    logger.info(
-        "Outline webhook payload: event=%s keys=%s",
-        event, list(payload.keys()),
-    )
 
     if event not in SUPPORTED_EVENTS:
-        logger.debug("Outline webhook: ignoring event %s", event)
         return JsonResponse({"status": "ignored", "event": event})
 
-    doc_id = payload.get("data", {}).get("id")
+    # Outline sends: {event, payload: {model: {id, ...}}}
+    # Normalize to our format: {event, data: {id, ...}}
+    data = payload.get("data") or {}
+    if not data:
+        outline_payload = payload.get("payload", {})
+        model = outline_payload.get("model", {})
+        if model:
+            data = model
+        elif outline_payload.get("id"):
+            data = outline_payload
+    doc_id = data.get("id")
+
     if not doc_id:
-        return JsonResponse({"error": "Missing document id"}, status=400)
+        logger.warning(
+            "Outline webhook: no doc id, keys=%s",
+            list(payload.keys()),
+        )
+        return JsonResponse(
+            {"error": "Missing document id"}, status=400,
+        )
+
+    # Normalize payload for service layer
+    normalized = {
+        "event": event,
+        "data": data,
+    }
 
     if event in ("documents.delete", "documents.archive"):
         delete_knowledge_document_task.delay(str(doc_id))
-        logger.info("Outline webhook: queued delete for %s", doc_id)
     else:
-        sync_knowledge_document_task.delay(payload)
-        logger.info("Outline webhook: queued sync for %s (%s)", doc_id, event)
+        sync_knowledge_document_task.delay(normalized)
 
+    logger.info(
+        "Outline webhook: %s for %s", event, doc_id,
+    )
     return JsonResponse({"status": "accepted", "event": event})
