@@ -174,7 +174,7 @@ SPECTACULAR_SETTINGS = {
 
 # Allauth
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 LOGIN_REDIRECT_URL = "/research/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
