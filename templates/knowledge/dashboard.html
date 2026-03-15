@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Dashboard — Research Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-journal-bookmark me-2"></i>Knowledge Dashboard</h2>
+  <a href="https://knowledge.iil.pet" target="_blank" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-box-arrow-up-right me-1"></i>Outline Wiki
+  </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center p-3">
+      <div class="fs-2 fw-bold" style="color: #a5b4fc;">{{ stats.total }}</div>
+      <div class="text-muted small">Dokumente</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center p-3">
+      <div class="fs-2 fw-bold" style="color: #4ade80;">{{ stats.enriched }}</div>
+      <div class="text-muted small">Enriched</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center p-3">
+      <div class="fs-2 fw-bold" style="color: #fbbf24;">{{ stats.pending }}</div>
+      <div class="text-muted small">Pending</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center p-3">
+      <div class="fs-2 fw-bold" style="color: #f87171;">{{ stats.failed }}</div>
+      <div class="text-muted small">Failed</div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Breakdown -->
+<div class="row g-3 mb-4">
+  {% for cat in categories %}
+  <div class="col-auto">
+    <a href="?category={{ cat.key }}" class="btn btn-sm {% if category_filter == cat.key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      {{ cat.label }} <span class="badge bg-dark ms-1">{{ cat.count }}</span>
+    </a>
+  </div>
+  {% endfor %}
+  {% if category_filter %}
+  <div class="col-auto">
+    <a href="{% url 'knowledge:dashboard' %}" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-x-circle me-1"></i>Filter entfernen
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Search + Status Filter -->
+<form method="get" class="row g-2 mb-4">
+  {% if category_filter %}
+  <input type="hidden" name="category" value="{{ category_filter }}">
+  {% endif %}
+  <div class="col-md-6">
+    <div class="input-group">
+      <span class="input-group-text bg-dark border-secondary"><i class="bi bi-search"></i></span>
+      <input type="text" name="q" class="form-control" placeholder="Titel, Summary oder Keyword suchen..." value="{{ search_query }}">
+    </div>
+  </div>
+  <div class="col-md-3">
+    <select name="status" class="form-select">
+      <option value="">Alle Status</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-funnel me-1"></i>Filtern
+    </button>
+  </div>
+</form>
+
+<!-- Documents Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Titel</th>
+          <th>Kategorie</th>
+          <th>Status</th>
+          <th>Keywords</th>
+          <th>Aktualisiert</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ doc.title|truncatechars:60 }}</div>
+            {% if doc.summary %}
+            <div class="text-muted small mt-1">{{ doc.summary|truncatechars:120 }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-dark border border-secondary">{{ doc.get_category_display }}</span>
+          </td>
+          <td>
+            {% if doc.enrichment_status == 'enriched' %}
+            <span class="badge" style="background: #14532d; color: #4ade80;">
+              <i class="bi bi-check-circle me-1"></i>Enriched
+            </span>
+            {% elif doc.enrichment_status == 'pending' %}
+            <span class="badge" style="background: #422006; color: #fbbf24;">
+              <i class="bi bi-hourglass-split me-1"></i>Pending
+            </span>
+            {% elif doc.enrichment_status == 'failed' %}
+            <span class="badge" style="background: #450a0a; color: #f87171;">
+              <i class="bi bi-exclamation-triangle me-1"></i>Failed
+            </span>
+            {% else %}
+            <span class="badge bg-secondary">{{ doc.get_enrichment_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for kw in doc.keywords|slice:":3" %}
+            <span class="badge bg-dark border border-secondary me-1">{{ kw }}</span>
+            {% endfor %}
+            {% if doc.keywords|length > 3 %}
+            <span class="text-muted small">+{{ doc.keywords|length|add:"-3" }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="text-muted small">{{ doc.updated_at|timesince }} ago</span>
+          </td>
+          <td>
+            {% if doc.outline_url %}
+            <a href="https://knowledge.iil.pet{{ doc.outline_url }}" target="_blank"
+               class="btn btn-sm btn-outline-secondary" title="In Outline öffnen">
+              <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">
+            <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+            Keine Dokumente gefunden.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if documents|length >= 100 %}
+<div class="text-muted text-center mt-3 small">
+  Zeige die ersten 100 Dokumente. Nutze die Suche oder Filter um einzugrenzen.
+</div>
+{% endif %}
+{% endblock %}
