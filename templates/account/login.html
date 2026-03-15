@@ -9,6 +9,15 @@
         <h2 class="mt-2 fw-bold">Willkommen zurück</h2>
         <p class="text-muted small">Melde dich mit deiner E-Mail an</p>
       </div>
+      <div class="d-grid mb-3">
+        <a href="{% url 'oidc_authentication_init' %}" class="btn btn-lg" style="background: #1a1d2e; border: 1px solid #6366f1; color: #a5b4fc;">
+          <i class="bi bi-shield-lock me-2"></i>Mit IIL Platform SSO anmelden
+        </a>
+      </div>
+      <div class="text-center text-muted small my-3">
+        <span class="px-2" style="background: #1a1d2e; position: relative; z-index: 1;">oder mit E-Mail</span>
+        <hr style="border-color: #2d3148; margin-top: -10px;">
+      </div>
       <form method="post">
         {% csrf_token %}
         {% for field in form %}

@@ -6,6 +6,7 @@ python-dotenv>=1.0
 
 # Authentication
 django-allauth>=0.61
+mozilla-django-oidc>=4.0
 
 # Forms
 django-crispy-forms>=2.1

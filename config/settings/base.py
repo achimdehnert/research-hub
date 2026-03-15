@@ -124,6 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
+    "apps.accounts.auth.IILOIDCAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
@@ -211,6 +212,19 @@ MODULE_SHOP_CATALOGUE = {
         "category": "organisation",
     },
 }
+
+# --- authentik OIDC (ADR-142) ---
+OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
+OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_RP_CLIENT_SECRET", "")
+_OIDC_APP_SLUG = os.environ.get("OIDC_APP_SLUG", "research-hub")
+_IDP = f"https://id.iil.pet/application/o/{_OIDC_APP_SLUG}"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
+OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"
+OIDC_OP_USER_ENDPOINT = f"{_IDP}/userinfo/"
+OIDC_OP_JWKS_ENDPOINT = f"{_IDP}/jwks/"
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = "openid email profile"
+LOGOUT_REDIRECT_URL = "/"
 
 # Sentry
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")

@@ -11,6 +11,7 @@ from django_tenancy.middleware import SubdomainTenantMiddleware
 
 EXEMPT_PATH_PREFIXES = (
     "/knowledge/",
+    "/oidc/",
     "/api/",
     "/metrics/",
 )
