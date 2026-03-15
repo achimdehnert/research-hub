@@ -87,6 +87,12 @@
           </li>
           {% if user.is_staff %}
           <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'knowledge' %}active{% endif %}"
+               href="{% url 'knowledge:dashboard' %}" title="Knowledge Dashboard">
+              <i class="bi bi-journal-bookmark me-1"></i>Knowledge
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'aifw-dashboard' %}active{% endif %}"
                href="{% url 'research:aifw-dashboard' %}" title="aifw Dashboard">
               <i class="bi bi-cpu me-1"></i>aifw

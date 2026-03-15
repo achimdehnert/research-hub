@@ -10,7 +10,7 @@ from django.http import HttpRequest, HttpResponse
 from django_tenancy.middleware import SubdomainTenantMiddleware
 
 EXEMPT_PATH_PREFIXES = (
-    "/knowledge/webhook/",
+    "/knowledge/",
     "/api/",
     "/metrics/",
 )
