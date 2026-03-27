@@ -13,7 +13,12 @@ def healthz(request):
     return JsonResponse({"status": "ok", "service": "research-hub"})
 
 
+def liveness(request):
+    return JsonResponse({"status": "alive"})
+
+
 urlpatterns = [
+    path("livez/", liveness, name="liveness"),
     path("healthz/", healthz, name="healthz"),
     path("metrics/", metrics_json, name="metrics-json"),
     path("metrics/prometheus/", metrics_prometheus, name="metrics-prometheus"),
