@@ -15,3 +15,6 @@ htmlcov/
 staticfiles/
 media/
 db.sqlite3
+
+# IDE agent workflows (symlinked, not repo-specific)
+.windsurf/
