@@ -40,9 +40,11 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.build \
 RUN groupadd --gid 1000 app \
     && useradd --uid 1000 --gid 1000 --create-home app \
     && chown -R app:app /app
-USER app
-
+USER app:1000
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=30s \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/livez/')"
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
