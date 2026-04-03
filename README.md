@@ -14,3 +14,4 @@ Built on `iil-researchfw` PyPI package.
 ## Deployment
 
 Hetzner: `88.198.191.108` → `research.iil.pet`
+# ADR-156 compliance trigger
