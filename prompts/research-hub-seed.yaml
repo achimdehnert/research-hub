@@ -1,0 +1,81 @@
+prompts:
+- action_code: research-hub.research.deep-analysis
+  name: Research Deep Analysis
+  hub: research-hub
+  domain: research
+  system_template: |-
+    Du bist ein erfahrener Forschungsanalyst.
+  user_template: |-
+    Du erhältst die Ergebnisse einer Recherche zum Thema:
+    "{{ query }}"
+
+    == ZUSAMMENFASSUNG (Stufe 1) ==
+    {{ summary }}
+
+    == FINDINGS ==
+    {{ findings_text }}
+
+    == QUELLEN ({{ source_count }}) ==
+    {{ sources_text }}
+
+    Erstelle eine **Tiefenanalyse** auf {{ lang_name }}:
+
+    1. **Kernaussagen** — Die 3-5 wichtigsten Erkenntnisse
+    2. **Analyse** — Bewertung, Widersprüche, Stärken/Schwächen der Quellen
+    3. **Wissenslücken** — Was fehlt, offene Fragen
+    4. **Methodische Einordnung** — Qualität der Quellenbasis
+    5. **Handlungsempfehlungen** — Konkrete nächste Schritte
+
+    Schreibe in Markdown. Sei analytisch, kritisch, präzise.
+  variables_schema:
+    query:
+      type: string
+      required: true
+    summary:
+      type: string
+      required: true
+    findings_text:
+      type: string
+      required: true
+    sources_text:
+      type: string
+      required: true
+    source_count:
+      type: integer
+      required: true
+    lang_name:
+      type: string
+      required: false
+      default: Deutsch
+  defaults:
+    lang_name: Deutsch
+- action_code: research-hub.knowledge.enrich
+  name: Knowledge Document Enrichment
+  hub: research-hub
+  domain: knowledge
+  response_format: json_object
+  user_template: |-
+    Analysiere das folgende technische Dokument und erstelle:
+
+    1. Eine prägnante deutsche Zusammenfassung (2-4 Sätze)
+    2. Eine Liste von 3-8 Keywords (englisch, lowercase)
+
+    Dokument-Titel: {{ title }}
+    Kategorie: {{ category }}
+
+    ---
+    {{ text }}
+    ---
+
+    Antworte EXAKT in diesem JSON-Format:
+    {"summary": "...", "keywords": ["keyword1", "keyword2", ...]}
+  variables_schema:
+    title:
+      type: string
+      required: true
+    category:
+      type: string
+      required: true
+    text:
+      type: string
+      required: true
