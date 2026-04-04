@@ -95,7 +95,23 @@ def enrich_knowledge_document_task(self, doc_pk: int) -> str:
     # Truncate text for prompt (max ~6000 chars)
     text = doc.text[:6000]
 
-    prompt = f"""Analysiere das folgende technische Dokument und erstelle:
+    # 1. Try DB-backed prompt (ADR-146)
+    messages = None
+    try:
+        from promptfw.contrib.django import render_prompt as db_render_prompt
+
+        messages = db_render_prompt(
+            "research-hub.knowledge.enrich",
+            title=doc.title,
+            category=doc.get_category_display(),
+            text=text,
+        )
+    except Exception:
+        pass  # fall through to inline
+
+    # 2. Inline fallback (legacy)
+    if not messages:
+        prompt = f"""Analysiere das folgende technische Dokument und erstelle:
 
 1. Eine prägnante deutsche Zusammenfassung (2-4 Sätze)
 2. Eine Liste von 3-8 Keywords (englisch, lowercase)
@@ -109,11 +125,12 @@ Kategorie: {doc.get_category_display()}
 
 Antworte EXAKT in diesem JSON-Format:
 {{"summary": "...", "keywords": ["keyword1", "keyword2", ...]}}"""
+        messages = [{"role": "user", "content": prompt}]
 
     try:
         result = aifw.sync_completion(
             action_code=ACTION_ENRICH,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         content = (result.content or "").strip()
 

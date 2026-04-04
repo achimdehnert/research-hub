@@ -48,6 +48,7 @@ THIRD_PARTY_APPS = [
     "django_module_shop",
     "content_store",  # ADR-130: Shared Content Store
     "aifw",  # LLM routing, model management, secrets
+    "promptfw.contrib.django",  # DB-backed prompt management (ADR-146)
 ]
 
 LOCAL_APPS = [
@@ -59,6 +60,15 @@ LOCAL_APPS = [
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# =============================================================================
+# PROMPTFW — DB-backed prompt management (ADR-146)
+# =============================================================================
+
+PROMPTFW_PROMPTS_DIR = None  # no file fallback — inline prompts as legacy path
+PROMPTFW_CACHE_TTL = 300
+PROMPTFW_FILE_FALLBACK = False
+PROMPTFW_MULTI_TENANT = False
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
