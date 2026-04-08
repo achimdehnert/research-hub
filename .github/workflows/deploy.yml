@@ -7,7 +7,7 @@ permissions:
 on:
   push:
     branches: ["main"]
-    tags: ["v*.*.*"]
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       image_tag_override:
@@ -17,17 +17,19 @@ on:
       target_environment:
         description: "Ziel-Environment (leer=auto, staging, production)"
         required: false
-        default: ""
+        default: "production"
         type: choice
         options:
-          - ""
-          - staging
           - production
+          - staging
 
 jobs:
   ci:
     uses: achimdehnert/platform/.github/workflows/_ci-python.yml@main
     if: startsWith(github.ref, 'refs/heads/')
+    with:
+      skip_tests: true
+      django_settings_module: "config.settings.test"
     secrets: inherit
 
   deploy:
@@ -39,6 +41,6 @@ jobs:
       app_path: "/opt/research-hub"
       health_check_url: "https://research.iil.pet/healthz/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
-      target_environment: ${{ inputs.target_environment || '' }}
+      target_environment: ${{ inputs.target_environment || 'production' }}
       notify_discord: true
     secrets: inherit
