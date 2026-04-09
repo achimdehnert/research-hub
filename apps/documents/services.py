@@ -6,11 +6,11 @@ Paperless = Source of Truth for files + OCR. research-hub = metadata + AI.
 from __future__ import annotations
 
 import logging
-import os
 from datetime import datetime
 from typing import Any
 
 import httpx
+from decouple import config as decouple_config
 from django.utils import timezone
 
 from .models import DocumentMetadata, DocumentMetadataStatus, PLATFORM_INTERNAL_TENANT_ID
@@ -21,11 +21,11 @@ PAPERLESS_TIMEOUT = 30.0
 
 
 def _get_paperless_url() -> str:
-    return os.environ.get("PAPERLESS_URL", "http://127.0.0.1:8102")
+    return decouple_config("PAPERLESS_URL", default="http://127.0.0.1:8102")
 
 
 def _get_paperless_headers() -> dict[str, str]:
-    token = os.environ.get("PAPERLESS_API_TOKEN", "")
+    token = decouple_config("PAPERLESS_API_TOKEN", default="")
     if not token:
         raise ValueError("PAPERLESS_API_TOKEN not configured")
     return {

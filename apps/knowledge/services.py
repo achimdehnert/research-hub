@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import os
 from datetime import datetime
 from typing import Any
 
 import requests
+from decouple import config as decouple_config
 from django.utils import timezone
 
 from apps.knowledge.models import (
@@ -22,10 +22,10 @@ from apps.knowledge.models import (
 
 logger = logging.getLogger(__name__)
 
-OUTLINE_API_URL = os.environ.get(
-    "OUTLINE_API_URL", "https://knowledge.iil.pet",
+OUTLINE_API_URL = decouple_config(
+    "OUTLINE_API_URL", default="https://knowledge.iil.pet",
 )
-OUTLINE_API_TOKEN = os.environ.get("OUTLINE_API_TOKEN", "")
+OUTLINE_API_TOKEN = decouple_config("OUTLINE_API_TOKEN", default="")
 
 
 def _compute_content_hash(title: str, text: str) -> str:
