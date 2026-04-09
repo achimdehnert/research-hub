@@ -1,30 +1,27 @@
 """Base settings for research-hub."""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import dj_database_url
-from dotenv import load_dotenv
-
-load_dotenv()
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-research-hub-dev-key-change-in-prod")
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-research-hub-dev-key-change-in-prod")
 
-DEBUG = os.environ.get("DEBUG", "True") == "True"
+DEBUG = config("DEBUG", default="True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,research.iil.pet").split(",")
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,research.iil.pet").split(",")
 
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    "CSRF_TRUSTED_ORIGINS", "https://research.iil.pet"
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS", default="https://research.iil.pet"
 ).split(",")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "True") == "True"
-SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "True") == "True"
+CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default="True").lower() in ("true", "1", "yes")
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default="True").lower() in ("true", "1", "yes")
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -111,11 +108,11 @@ DATABASES = {
     # ADR-130: Shared Content Store (cross-app persistence)
     "content_store": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("CONTENT_STORE_DB_NAME", "content_store"),
-        "USER": os.environ.get("CONTENT_STORE_DB_USER", "content_store"),
-        "PASSWORD": os.environ.get("CONTENT_STORE_DB_PASSWORD", ""),
-        "HOST": os.environ.get("CONTENT_STORE_DB_HOST", "devhub_db"),
-        "PORT": os.environ.get("CONTENT_STORE_DB_PORT", "5432"),
+        "NAME": config("CONTENT_STORE_DB_NAME", default="content_store"),
+        "USER": config("CONTENT_STORE_DB_USER", default="content_store"),
+        "PASSWORD": config("CONTENT_STORE_DB_PASSWORD", default=""),
+        "HOST": config("CONTENT_STORE_DB_HOST", default="devhub_db"),
+        "PORT": config("CONTENT_STORE_DB_PORT", default="5432"),
         "CONN_MAX_AGE": 60,
     },
 }
@@ -156,7 +153,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Celery
-CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "django-cache"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
@@ -190,8 +187,8 @@ LOGIN_REDIRECT_URL = "/research/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
 # Email
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
 )
 
 # Module Shop
@@ -224,9 +221,9 @@ MODULE_SHOP_CATALOGUE = {
 }
 
 # --- authentik OIDC (ADR-142) ---
-OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
-OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_RP_CLIENT_SECRET", "")
-_OIDC_APP_SLUG = os.environ.get("OIDC_APP_SLUG", "research-hub")
+OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
+_OIDC_APP_SLUG = config("OIDC_APP_SLUG", default="research-hub")
 _IDP = "https://id.iil.pet/application/o"
 OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
 OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"
@@ -237,7 +234,7 @@ OIDC_RP_SCOPES = "openid email profile"
 LOGOUT_REDIRECT_URL = "/"
 
 # Sentry
-SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+SENTRY_DSN = config("SENTRY_DSN", default="")
 if SENTRY_DSN:
     import sentry_sdk
     sentry_sdk.init(dsn=SENTRY_DSN, traces_sample_rate=0.1)

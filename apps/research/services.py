@@ -7,10 +7,10 @@ for API keys.
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 
 import aifw
+from decouple import config as decouple_config
 from iil_researchfw import (
     AcademicSearchService,
     AISummaryService,
@@ -157,7 +157,7 @@ class ResearchProjectService:
     def _build_service(
         self, project: ResearchProject,
     ) -> ResearchService:
-        brave_key = os.environ.get("BRAVE_API_KEY", "")
+        brave_key = decouple_config("BRAVE_API_KEY", default="")
         rtype = project.research_type
         use_web = rtype in ("web", "combined", "fact_check")
         use_academic = rtype in ("academic", "combined")
