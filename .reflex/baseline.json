@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-04-18T10:55:22.627280+00:00",
+  "created_at": "2026-04-18T11:04:51.811371+00:00",
   "findings": [
     {
       "rule_id": "adr.no_adr_directory",
@@ -48,6 +48,16 @@
       "adr_ref": "ADR-045",
       "fix_hint": "echo '.env.prod' >> .gitignore",
       "file_path": ".gitignore",
+      "auto_fixable": true,
+      "fix_complexity": "trivial"
+    },
+    {
+      "rule_id": "security.missing_dockerignore",
+      "severity": "block",
+      "message": "Missing .dockerignore — .env, .git, secrets may leak into Docker image",
+      "adr_ref": "ADR-021 §3",
+      "fix_hint": "Create .dockerignore with: .env* .git .reflex __pycache__ *.pyc",
+      "file_path": null,
       "auto_fixable": true,
       "fix_complexity": "trivial"
     },
