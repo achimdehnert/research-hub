@@ -1,7 +1,7 @@
 """Tests for Knowledge Dashboard (staff-only view)."""
+
 from __future__ import annotations
 
-import json
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -139,6 +139,7 @@ class TestKnowledgeDashboardContent(TestCase):
 
     def test_should_exclude_soft_deleted(self):
         from django.utils import timezone
+
         self.doc_failed.deleted_at = timezone.now()
         self.doc_failed.save()
 

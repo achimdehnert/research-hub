@@ -1,4 +1,5 @@
 """Celery tasks for Paperless-ngx document sync (ADR-144)."""
+
 from __future__ import annotations
 
 import logging

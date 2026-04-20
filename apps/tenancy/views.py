@@ -1,9 +1,10 @@
 """Tenancy management views for research-hub."""
+
 from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.urls import reverse
 
 from django_tenancy.models import Membership, Organization
@@ -17,10 +18,14 @@ def org_list(request: HttpRequest):
         .select_related("organization")
         .order_by("organization__name")
     )
-    return render(request, "tenancy/org_list.html", {
-        "memberships": memberships,
-        "current_tenant": getattr(request, "tenant", None),
-    })
+    return render(
+        request,
+        "tenancy/org_list.html",
+        {
+            "memberships": memberships,
+            "current_tenant": getattr(request, "tenant", None),
+        },
+    )
 
 
 @login_required

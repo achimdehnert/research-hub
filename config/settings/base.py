@@ -1,4 +1,5 @@
 """Base settings for research-hub."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,14 +15,16 @@ DEBUG = config("DEBUG", default="True").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,research.iil.pet").split(",")
 
-CSRF_TRUSTED_ORIGINS = config(
-    "CSRF_TRUSTED_ORIGINS", default="https://research.iil.pet"
-).split(",")
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="https://research.iil.pet").split(",")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default="True").lower() in ("true", "1", "yes")
-SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default="True").lower() in ("true", "1", "yes")
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default="True").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -187,9 +190,7 @@ LOGIN_REDIRECT_URL = "/research/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
 # Email
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
-)
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 
 # Module Shop
 MODULE_SHOP_CATALOGUE = {
@@ -237,4 +238,5 @@ LOGOUT_REDIRECT_URL = "/"
 SENTRY_DSN = config("SENTRY_DSN", default="")
 if SENTRY_DSN:
     import sentry_sdk
+
     sentry_sdk.init(dsn=SENTRY_DSN, traces_sample_rate=0.1)

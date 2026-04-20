@@ -1,4 +1,5 @@
 """Tests for research views — reformat HTMX endpoint."""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,9 +12,7 @@ User = get_user_model()
 
 @pytest.fixture
 def user(db):
-    return User.objects.create_user(
-        username="view_user", password="pass", email="view@iil.pet"
-    )
+    return User.objects.create_user(username="view_user", password="pass", email="view@iil.pet")
 
 
 @pytest.fixture

@@ -3,6 +3,7 @@
 ADR-145 Phase 9+12: HMAC verification, dedup, lazy secret.
 Security: HMAC signature verified before any processing (ADR-050).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -31,6 +32,7 @@ def _get_webhook_secret() -> str:
     """Lazy-load secret (allows rotation without restart)."""
     return config("OUTLINE_WEBHOOK_SECRET", default="")
 
+
 SUPPORTED_EVENTS = {
     "documents.create",
     "documents.update",
@@ -52,28 +54,29 @@ def _verify_hmac(body: bytes, signature: str, secret: str) -> bool:
 
     # Outline format: t=<ts>,s=<hex>
     if signature.startswith("t="):
-        parts = dict(
-            p.split("=", 1)
-            for p in signature.split(",")
-            if "=" in p
-        )
+        parts = dict(p.split("=", 1) for p in signature.split(",") if "=" in p)
         ts = parts.get("t", "")
         sig_hex = parts.get("s", "")
         if not ts or not sig_hex:
             return False
         msg = f"{ts}.".encode() + body
         expected = hmac.new(
-            secret.encode(), msg, hashlib.sha256,
+            secret.encode(),
+            msg,
+            hashlib.sha256,
         ).hexdigest()
         return hmac.compare_digest(expected, sig_hex)
 
     # Fallback: sha256=<hex>
     if signature.startswith("sha256="):
         expected = hmac.new(
-            secret.encode(), body, hashlib.sha256,
+            secret.encode(),
+            body,
+            hashlib.sha256,
         ).hexdigest()
         return hmac.compare_digest(
-            f"sha256={expected}", signature,
+            f"sha256={expected}",
+            signature,
         )
 
     return False
@@ -87,9 +90,8 @@ def outline_webhook(request):
     Verifies HMAC-SHA256 signature, then dispatches to Celery tasks.
     Events: documents.create, documents.update, documents.delete.
     """
-    signature = (
-        request.headers.get("Outline-Signature", "")
-        or request.headers.get("X-Outline-Signature", "")
+    signature = request.headers.get("Outline-Signature", "") or request.headers.get(
+        "X-Outline-Signature", ""
     )
 
     secret = _get_webhook_secret()
@@ -100,7 +102,8 @@ def outline_webhook(request):
             bool(secret),
         )
         return JsonResponse(
-            {"error": "Invalid signature"}, status=401,
+            {"error": "Invalid signature"},
+            status=401,
         )
 
     try:
@@ -131,7 +134,8 @@ def outline_webhook(request):
             list(payload.keys()),
         )
         return JsonResponse(
-            {"error": "Missing document id"}, status=400,
+            {"error": "Missing document id"},
+            status=400,
         )
 
     # Normalize payload for service layer

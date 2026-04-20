@@ -1,4 +1,5 @@
 """Frontend aifw dashboard — staff-only overview of providers, models, actions, usage."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -28,36 +29,28 @@ def aifw_dashboard(request: HttpRequest) -> HttpResponse:
     for p in LLMProvider.objects.all():
         key_env = p.api_key_env_var or ""
         key_value = config(key_env, default="") if key_env else ""
-        providers.append({
-            "obj": p,
-            "key_env": key_env,
-            "key_set": bool(key_value),
-            "key_preview": (
-                f"{key_value[:4]}...{key_value[-4:]}"
-                if len(key_value) > 8
-                else ""
-            ),
-            "model_count": LLMModel.objects.filter(
-                provider=p
-            ).count(),
-        })
+        providers.append(
+            {
+                "obj": p,
+                "key_env": key_env,
+                "key_set": bool(key_value),
+                "key_preview": (
+                    f"{key_value[:4]}...{key_value[-4:]}" if len(key_value) > 8 else ""
+                ),
+                "model_count": LLMModel.objects.filter(provider=p).count(),
+            }
+        )
 
     # ── Models ──
-    models = (
-        LLMModel.objects.select_related("provider")
-        .order_by("provider__name", "name")
-    )
+    models = LLMModel.objects.select_related("provider").order_by("provider__name", "name")
 
     # ── Actions ──
-    actions = (
-        AIActionType.objects.select_related(
-            "default_model",
-            "default_model__provider",
-            "fallback_model",
-            "fallback_model__provider",
-        )
-        .order_by("code")
-    )
+    actions = AIActionType.objects.select_related(
+        "default_model",
+        "default_model__provider",
+        "fallback_model",
+        "fallback_model__provider",
+    ).order_by("code")
 
     # ── Usage stats (last 7 days) ──
     since = timezone.now() - timedelta(days=7)
@@ -127,7 +120,7 @@ def aifw_toggle_action(request: HttpRequest) -> HttpResponse:
         return HttpResponse(
             f'<span style="color:{color}">'
             f'<i class="bi bi-{icon}"></i> '
-            f'{"Aktiv" if action.is_active else "Inaktiv"}'
+            f"{'Aktiv' if action.is_active else 'Inaktiv'}"
             f"</span>"
         )
     except AIActionType.DoesNotExist:
@@ -152,7 +145,7 @@ def aifw_toggle_provider(request: HttpRequest) -> HttpResponse:
         return HttpResponse(
             f'<span style="color:{color}">'
             f'<i class="bi bi-{icon}"></i> '
-            f'{"Aktiv" if provider.is_active else "Inaktiv"}'
+            f"{'Aktiv' if provider.is_active else 'Inaktiv'}"
             f"</span>"
         )
     except LLMProvider.DoesNotExist:

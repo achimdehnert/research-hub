@@ -8,6 +8,7 @@ Exposes:
 
 Access: staff-only (JSON) or token-auth for Prometheus scraping.
 """
+
 from __future__ import annotations
 
 import time
@@ -43,12 +44,16 @@ def _check_auth(request: HttpRequest) -> bool:
     # HTTP Basic Auth
     if auth.startswith("Basic "):
         import base64
+
         try:
             decoded = base64.b64decode(auth[6:]).decode()
             username, password = decoded.split(":", 1)
             from django.contrib.auth import authenticate
+
             user = authenticate(
-                request, username=username, password=password,
+                request,
+                username=username,
+                password=password,
             )
             if user and user.is_staff:
                 return True
@@ -84,9 +89,11 @@ def _health_checks() -> dict:
     # Redis
     try:
         from config.celery import app as celery_app
+
         t0 = time.monotonic()
         celery_app.connection_for_read().ensure_connection(
-            max_retries=1, timeout=2,
+            max_retries=1,
+            timeout=2,
         )
         checks["redis"] = {
             "status": "ok",
@@ -108,7 +115,8 @@ def _health_checks() -> dict:
         }
     except Exception as e:
         checks["content_store"] = {
-            "status": "error", "error": str(e),
+            "status": "error",
+            "error": str(e),
         }
 
     return checks
@@ -213,11 +221,7 @@ def _celery_metrics() -> dict:
 
     since = timezone.now() - timedelta(days=7)
     qs = TaskResult.objects.filter(date_done__gte=since)
-    by_status = dict(
-        qs.values_list("status")
-        .annotate(c=Count("id"))
-        .values_list("status", "c")
-    )
+    by_status = dict(qs.values_list("status").annotate(c=Count("id")).values_list("status", "c"))
     return {
         "period_days": 7,
         "total": qs.count(),
@@ -229,12 +233,9 @@ def _content_store_metrics() -> dict:
     """Content-store item counts."""
     try:
         from content_store.models import ContentItem
+
         qs = ContentItem.objects.using("content_store")
-        by_type = dict(
-            qs.values_list("type")
-            .annotate(c=Count("id"))
-            .values_list("type", "c")
-        )
+        by_type = dict(qs.values_list("type").annotate(c=Count("id")).values_list("type", "c"))
         return {
             "total": qs.count(),
             "by_type": by_type,
@@ -248,14 +249,12 @@ def _to_prometheus(data: dict) -> str:
     lines = []
 
     def _add(
-        name: str, value,
+        name: str,
+        value,
         help_text: str = "",
         labels: dict | None = None,
     ):
-        if help_text and not any(
-            ln.startswith(f"# HELP {name}")
-            for ln in lines
-        ):
+        if help_text and not any(ln.startswith(f"# HELP {name}") for ln in lines):
             lines.append(f"# HELP {name} {help_text}")
             lines.append(f"# TYPE {name} gauge")
         label_str = ""
@@ -269,7 +268,8 @@ def _to_prometheus(data: dict) -> str:
     for svc, info in health.items():
         ok = 1 if info.get("status") == "ok" else 0
         _add(
-            "research_health_up", ok,
+            "research_health_up",
+            ok,
             "Service health status (1=ok, 0=error)",
             {"service": svc},
         )
@@ -284,23 +284,28 @@ def _to_prometheus(data: dict) -> str:
     # aifw
     aifw = data.get("aifw", {})
     _add(
-        "aifw_calls_total", aifw.get("total_calls", 0),
+        "aifw_calls_total",
+        aifw.get("total_calls", 0),
         "Total aifw LLM calls",
     )
     _add(
-        "aifw_tokens_total", aifw.get("total_tokens", 0),
+        "aifw_tokens_total",
+        aifw.get("total_tokens", 0),
         "Total tokens used",
     )
     _add(
-        "aifw_cost_total", aifw.get("total_cost", 0),
+        "aifw_cost_total",
+        aifw.get("total_cost", 0),
         "Total estimated cost in USD",
     )
     _add(
-        "aifw_success_total", aifw.get("success_count", 0),
+        "aifw_success_total",
+        aifw.get("success_count", 0),
         "Successful aifw calls",
     )
     _add(
-        "aifw_error_total", aifw.get("error_count", 0),
+        "aifw_error_total",
+        aifw.get("error_count", 0),
         "Failed aifw calls",
     )
     for a in aifw.get("by_action", []):
@@ -358,7 +363,8 @@ def metrics_json(request: HttpRequest) -> HttpResponse:
     """JSON metrics endpoint — staff or token auth."""
     if not _check_auth(request):
         return JsonResponse(
-            {"error": "unauthorized"}, status=401,
+            {"error": "unauthorized"},
+            status=401,
         )
 
     data = {
@@ -390,7 +396,5 @@ def metrics_prometheus(request: HttpRequest) -> HttpResponse:
     body = _to_prometheus(data)
     return HttpResponse(
         body,
-        content_type=(
-            "text/plain; version=0.0.4; charset=utf-8"
-        ),
+        content_type=("text/plain; version=0.0.4; charset=utf-8"),
     )
