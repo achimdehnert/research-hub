@@ -109,7 +109,7 @@
         hx-target="#summary-body"
         hx-swap="innerHTML"
         hx-indicator="#summary-spinner"
-        onclick="document.querySelectorAll('.reformat-btn').forEach(b=>b.style.color='#94a3b8'); this.style.color='#a5b4fc'">
+        data-action="highlight-reformat">
         <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
       </button>
       {% endfor %}
@@ -234,4 +234,13 @@
   .htmx-indicator { display:none; }
   .htmx-request .htmx-indicator { display:inline; }
 </style>
+<script>
+document.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action="highlight-reformat"]');
+    if (el) {
+        document.querySelectorAll('.reformat-btn').forEach(function(b) { b.style.color = '#94a3b8'; });
+        el.style.color = '#a5b4fc';
+    }
+});
+</script>
 {% endblock %}
