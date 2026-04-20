@@ -10,9 +10,10 @@ Access: staff-only (JSON) or token-auth for Prometheus scraping.
 """
 from __future__ import annotations
 
-import os
 import time
 from datetime import timedelta
+
+from decouple import config
 
 from django.db import connections
 from django.db.models import Count, Sum
@@ -21,8 +22,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 
-
-METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "")
+METRICS_TOKEN = config("METRICS_TOKEN", default="")
 
 
 def _check_auth(request: HttpRequest) -> bool:
@@ -154,7 +154,7 @@ def _aifw_metrics(days: int = 7) -> dict:
     # Provider status
     providers = {}
     for p in LLMProvider.objects.all():
-        key = os.environ.get(p.api_key_env_var or "", "")
+        key = config(p.api_key_env_var, default="") if p.api_key_env_var else ""
         providers[p.name] = {
             "active": p.is_active,
             "key_set": bool(key),
