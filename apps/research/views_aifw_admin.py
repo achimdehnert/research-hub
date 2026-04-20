@@ -1,9 +1,10 @@
 """Frontend aifw dashboard — staff-only overview of providers, models, actions, usage."""
 from __future__ import annotations
 
-import os
 from datetime import timedelta
 from decimal import Decimal
+
+from decouple import config
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, Sum
@@ -26,7 +27,7 @@ def aifw_dashboard(request: HttpRequest) -> HttpResponse:
     providers = []
     for p in LLMProvider.objects.all():
         key_env = p.api_key_env_var or ""
-        key_value = os.environ.get(key_env, "")
+        key_value = config(key_env, default="") if key_env else ""
         providers.append({
             "obj": p,
             "key_env": key_env,

@@ -9,7 +9,8 @@ import hashlib
 import hmac
 import json
 import logging
-import os
+
+from decouple import config
 
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -28,7 +29,7 @@ DEDUP_TTL = 5  # seconds — Outline fires create+publish simultaneously
 
 def _get_webhook_secret() -> str:
     """Lazy-load secret (allows rotation without restart)."""
-    return os.environ.get("OUTLINE_WEBHOOK_SECRET", "")
+    return config("OUTLINE_WEBHOOK_SECRET", default="")
 
 SUPPORTED_EVENTS = {
     "documents.create",
