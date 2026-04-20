@@ -3,6 +3,7 @@
 Handles CRUD for KnowledgeDocument, called from webhook view and Celery tasks.
 Phase 12: content_hash change detection, Outline API fetch.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -23,7 +24,8 @@ from apps.knowledge.models import (
 logger = logging.getLogger(__name__)
 
 OUTLINE_API_URL = decouple_config(
-    "OUTLINE_API_URL", default="https://knowledge.iil.pet",
+    "OUTLINE_API_URL",
+    default="https://knowledge.iil.pet",
 )
 OUTLINE_API_TOKEN = decouple_config("OUTLINE_API_TOKEN", default="")
 
@@ -55,11 +57,13 @@ def _fetch_document_from_outline(doc_id: str) -> dict | None:
             return resp.json().get("data", {})
         logger.warning(
             "Outline API fetch failed: %s %s",
-            resp.status_code, resp.text[:200],
+            resp.status_code,
+            resp.text[:200],
         )
     except requests.RequestException as exc:
         logger.warning("Outline API fetch error: %s", exc)
     return None
+
 
 # Map Outline collection IDs to categories
 COLLECTION_CATEGORY_MAP: dict[str, KnowledgeCategory] = {
@@ -101,21 +105,21 @@ def sync_document_from_outline(
 
     collection_id = doc_data.get("collectionId", "")
     category = COLLECTION_CATEGORY_MAP.get(
-        collection_id, KnowledgeCategory.RUNBOOK,
+        collection_id,
+        KnowledgeCategory.RUNBOOK,
     )
 
     outline_updated = doc_data.get("updatedAt")
     outline_updated_dt = None
     if outline_updated:
         try:
-            outline_updated_dt = datetime.fromisoformat(
-                outline_updated.replace("Z", "+00:00")
-            )
+            outline_updated_dt = datetime.fromisoformat(outline_updated.replace("Z", "+00:00"))
         except (ValueError, TypeError):
             pass
 
     new_hash = _compute_content_hash(
-        title or "Untitled", text,
+        title or "Untitled",
+        text,
     )
 
     defaults = {
@@ -150,14 +154,19 @@ def sync_document_from_outline(
         # Reset enrichment on content change
         if not created and old_hash != new_hash:
             doc.enrichment_status = EnrichmentStatus.PENDING
-            doc.save(update_fields=[
-                "enrichment_status", "updated_at",
-            ])
+            doc.save(
+                update_fields=[
+                    "enrichment_status",
+                    "updated_at",
+                ]
+            )
 
     action = "created" if created else "updated"
     logger.info(
         "KnowledgeDocument %s: %s (changed=%s)",
-        action, doc.title, doc._content_changed,  # noqa: SLF001
+        action,
+        doc.title,
+        doc._content_changed,  # noqa: SLF001
     )
     return doc
 
@@ -170,13 +179,15 @@ def soft_delete_document(outline_id: str) -> bool:
     """
     try:
         doc = KnowledgeDocument.objects.get(
-            outline_id=outline_id, deleted_at__isnull=True,
+            outline_id=outline_id,
+            deleted_at__isnull=True,
         )
         doc.deleted_at = timezone.now()
         doc.save(update_fields=["deleted_at", "updated_at"])
         logger.info(
             "KnowledgeDocument soft-deleted: %s (outline_id=%s)",
-            doc.title, outline_id,
+            doc.title,
+            outline_id,
         )
         return True
     except KnowledgeDocument.DoesNotExist:
@@ -197,9 +208,15 @@ def mark_enrichment_complete(
     doc.keywords = keywords
     doc.enrichment_status = EnrichmentStatus.ENRICHED
     doc.enriched_at = timezone.now()
-    doc.save(update_fields=[
-        "summary", "keywords", "enrichment_status", "enriched_at", "updated_at",
-    ])
+    doc.save(
+        update_fields=[
+            "summary",
+            "keywords",
+            "enrichment_status",
+            "enriched_at",
+            "updated_at",
+        ]
+    )
     logger.info("KnowledgeDocument enriched: %s", doc.title)
 
 

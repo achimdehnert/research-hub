@@ -1,4 +1,5 @@
 """Admin configuration for DocumentMetadata (ADR-144)."""
+
 from django.contrib import admin
 
 from .models import DocumentMetadata

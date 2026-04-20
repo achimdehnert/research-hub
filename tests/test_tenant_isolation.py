@@ -5,6 +5,7 @@ Verifies that:
 - User without tenant sees only own personal workspaces
 - Tenant-assigned workspace is not visible without tenant context
 """
+
 import uuid
 
 import pytest
@@ -12,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 from django.urls import reverse
 
-from apps.research.models import Project, ResearchProject, Workspace
+from apps.research.models import Workspace
 from apps.research.views import _tenant_workspace_qs
 
 User = get_user_model()
@@ -23,39 +24,30 @@ TENANT_B = uuid.uuid4()
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def user_a(db):
-    return User.objects.create_user(
-        username="user_a", password="pass", email="user_a@iil.pet"
-    )
+    return User.objects.create_user(username="user_a", password="pass", email="user_a@iil.pet")
 
 
 @pytest.fixture
 def user_b(db):
-    return User.objects.create_user(
-        username="user_b", password="pass", email="user_b@iil.pet"
-    )
+    return User.objects.create_user(username="user_b", password="pass", email="user_b@iil.pet")
 
 
 @pytest.fixture
 def ws_tenant_a(user_a):
-    return Workspace.objects.create(
-        user=user_a, name="Tenant-A Workspace", tenant_id=TENANT_A
-    )
+    return Workspace.objects.create(user=user_a, name="Tenant-A Workspace", tenant_id=TENANT_A)
 
 
 @pytest.fixture
 def ws_tenant_b(user_b):
-    return Workspace.objects.create(
-        user=user_b, name="Tenant-B Workspace", tenant_id=TENANT_B
-    )
+    return Workspace.objects.create(user=user_b, name="Tenant-B Workspace", tenant_id=TENANT_B)
 
 
 @pytest.fixture
 def ws_personal_a(user_a):
-    return Workspace.objects.create(
-        user=user_a, name="Personal Workspace A", tenant_id=None
-    )
+    return Workspace.objects.create(user=user_a, name="Personal Workspace A", tenant_id=None)
 
 
 @pytest.fixture
@@ -73,10 +65,9 @@ def _make_request(rf, user, tenant_id=None):
 
 # ── Tenant isolation tests ────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
-def test_should_not_see_other_tenants_workspace(
-    rf, user_a, ws_tenant_a, ws_tenant_b
-):
+def test_should_not_see_other_tenants_workspace(rf, user_a, ws_tenant_a, ws_tenant_b):
     """User A in Tenant A must not see Workspace from Tenant B."""
     request = _make_request(rf, user_a, tenant_id=TENANT_A)
     qs = _tenant_workspace_qs(request)
@@ -85,9 +76,7 @@ def test_should_not_see_other_tenants_workspace(
 
 
 @pytest.mark.django_db
-def test_should_not_see_other_users_personal_workspace(
-    rf, user_a, user_b, ws_personal_a
-):
+def test_should_not_see_other_users_personal_workspace(rf, user_a, user_b, ws_personal_a):
     """User B must not see personal Workspace of User A."""
     request = _make_request(rf, user_b, tenant_id=None)
     qs = _tenant_workspace_qs(request)
@@ -95,9 +84,7 @@ def test_should_not_see_other_users_personal_workspace(
 
 
 @pytest.mark.django_db
-def test_should_not_see_tenant_workspace_without_tenant_context(
-    rf, user_a, ws_tenant_a
-):
+def test_should_not_see_tenant_workspace_without_tenant_context(rf, user_a, ws_tenant_a):
     """Without tenant context, user_a sees only personal workspaces (tenant_id=None)."""
     request = _make_request(rf, user_a, tenant_id=None)
     qs = _tenant_workspace_qs(request)
@@ -105,9 +92,7 @@ def test_should_not_see_tenant_workspace_without_tenant_context(
 
 
 @pytest.mark.django_db
-def test_should_see_personal_workspace_without_tenant(
-    rf, user_a, ws_personal_a
-):
+def test_should_see_personal_workspace_without_tenant(rf, user_a, ws_personal_a):
     """User A without tenant context sees own personal workspace."""
     request = _make_request(rf, user_a, tenant_id=None)
     qs = _tenant_workspace_qs(request)
@@ -115,9 +100,7 @@ def test_should_see_personal_workspace_without_tenant(
 
 
 @pytest.mark.django_db
-def test_should_isolate_all_four_cases(
-    rf, user_a, user_b, ws_tenant_a, ws_tenant_b, ws_personal_a
-):
+def test_should_isolate_all_four_cases(rf, user_a, user_b, ws_tenant_a, ws_tenant_b, ws_personal_a):
     """Full isolation matrix: each context sees exactly the right workspaces."""
     # user_a with TENANT_A
     req = _make_request(rf, user_a, TENANT_A)
@@ -141,10 +124,9 @@ def test_should_isolate_all_four_cases(
 
 # ── HTTP-level isolation via Django test client ───────────────────────────────
 
+
 @pytest.mark.django_db
-def test_should_return_404_for_workspace_of_other_tenant(
-    user_a, user_b, ws_tenant_b, client
-):
+def test_should_return_404_for_workspace_of_other_tenant(user_a, user_b, ws_tenant_b, client):
     """User A (no tenant) must get 404 for Workspace that belongs to Tenant B."""
     client.force_login(user_a)
     response = client.get(

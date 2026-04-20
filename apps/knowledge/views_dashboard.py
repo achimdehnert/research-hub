@@ -1,4 +1,5 @@
 """Knowledge Dashboard — staff-only overview of synced Outline documents."""
+
 from __future__ import annotations
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -55,16 +56,13 @@ def knowledge_dashboard(request: HttpRequest) -> HttpResponse:
     }
 
     # Category breakdown
-    category_counts = (
-        all_docs.values("category")
-        .annotate(count=Count("id"))
-        .order_by("-count")
-    )
+    category_counts = all_docs.values("category").annotate(count=Count("id")).order_by("-count")
     categories = [
         {
             "key": c["category"],
             "label": dict(KnowledgeCategory.choices).get(
-                c["category"], c["category"],
+                c["category"],
+                c["category"],
             ),
             "count": c["count"],
         }

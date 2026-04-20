@@ -4,6 +4,7 @@ Usage:
     python manage.py seed_aifw          # idempotent create/update
     python manage.py seed_aifw --reset  # wipe + recreate
 """
+
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand
@@ -94,10 +95,7 @@ ACTIONS = [
     {
         "code": "research.reformat",
         "name": "Zusammenfassung umformatieren",
-        "description": (
-            "Text in anderes Format umwandeln "
-            "(Stichpunkte, Fließtext, etc.)."
-        ),
+        "description": ("Text in anderes Format umwandeln (Stichpunkte, Fließtext, etc.)."),
         "default_model": (
             "together_ai",
             "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
@@ -175,12 +173,8 @@ class Command(BaseCommand):
                 defaults={
                     "display_name": mdata["display_name"],
                     "max_tokens": mdata["max_tokens"],
-                    "input_cost_per_million": mdata.get(
-                        "input_cost_per_million", "0"
-                    ),
-                    "output_cost_per_million": mdata.get(
-                        "output_cost_per_million", "0"
-                    ),
+                    "input_cost_per_million": mdata.get("input_cost_per_million", "0"),
+                    "output_cost_per_million": mdata.get("output_cost_per_million", "0"),
                     "is_active": True,
                     "is_default": mdata.get("is_default", False),
                 },
@@ -208,11 +202,10 @@ class Command(BaseCommand):
                 defaults=defaults,
             )
             tag = "Created" if created else "Updated"
-            self.stdout.write(
-                f"  {tag} action: {obj.code} → {default.display_name}"
-            )
+            self.stdout.write(f"  {tag} action: {obj.code} → {default.display_name}")
 
-        self.stdout.write(self.style.SUCCESS(
-            f"\nDone: {len(PROVIDERS)} providers, "
-            f"{len(MODELS)} models, {len(ACTIONS)} actions."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\nDone: {len(PROVIDERS)} providers, {len(MODELS)} models, {len(ACTIONS)} actions."
+            )
+        )

@@ -4,6 +4,7 @@ Usage:
     python manage.py sync_paperless           # incremental (last 24h)
     python manage.py sync_paperless --full    # full sync
 """
+
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand
@@ -34,8 +35,10 @@ class Command(BaseCommand):
 
         result = sync_all_documents(modified_after=modified_after)
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Sync complete: {result['created']} created, "
-            f"{result['updated']} updated, {result['errors']} errors "
-            f"({result['total']} total from Paperless)"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Sync complete: {result['created']} created, "
+                f"{result['updated']} updated, {result['errors']} errors "
+                f"({result['total']} total from Paperless)"
+            )
+        )

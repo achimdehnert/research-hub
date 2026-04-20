@@ -4,6 +4,7 @@ Also contains regression tests for known bugs:
 - BUG-001: ResearchProject not linked to Project after form submit
 - BUG-002: ResearchProject.workspace NULL when created via Project
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -17,11 +18,10 @@ User = get_user_model()
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def user(db):
-    return User.objects.create_user(
-        username="hier_user", password="pass", email="hier@iil.pet"
-    )
+    return User.objects.create_user(username="hier_user", password="pass", email="hier@iil.pet")
 
 
 @pytest.fixture
@@ -31,9 +31,7 @@ def workspace(user):
 
 @pytest.fixture
 def project(workspace, user):
-    return Project.objects.create(
-        workspace=workspace, user=user, name="Test Project"
-    )
+    return Project.objects.create(workspace=workspace, user=user, name="Test Project")
 
 
 @pytest.fixture
@@ -51,6 +49,7 @@ def research(project, user):
 
 
 # ── Workspace views ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_show_workspace_list(user, workspace, client):
@@ -86,9 +85,7 @@ def test_should_include_breadcrumb_in_workspace_detail(user, workspace, client):
 
 @pytest.mark.django_db
 def test_should_deny_workspace_detail_for_other_user(workspace, client, db):
-    other = User.objects.create_user(
-        username="other", password="pass", email="other@iil.pet"
-    )
+    other = User.objects.create_user(username="other", password="pass", email="other@iil.pet")
     client.force_login(other)
     response = client.get(
         reverse("research:workspace-detail", kwargs={"public_id": workspace.public_id})
@@ -97,6 +94,7 @@ def test_should_deny_workspace_detail_for_other_user(workspace, client, db):
 
 
 # ── Project views ───────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_show_project_detail(user, project, client):
@@ -135,9 +133,7 @@ def test_should_create_project_under_workspace(user, workspace, client):
 
 @pytest.mark.django_db
 def test_should_deny_project_detail_for_other_user(project, client, db):
-    other = User.objects.create_user(
-        username="other2", password="pass", email="other2@iil.pet"
-    )
+    other = User.objects.create_user(username="other2", password="pass", email="other2@iil.pet")
     client.force_login(other)
     response = client.get(
         reverse("research:project-detail", kwargs={"project_id": project.public_id})
@@ -146,6 +142,7 @@ def test_should_deny_project_detail_for_other_user(project, client, db):
 
 
 # ── ResearchProject views ────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_show_research_detail(user, research, client):
@@ -175,9 +172,7 @@ def test_should_include_breadcrumb_in_research_detail(user, workspace, project, 
 @pytest.mark.django_db
 def test_should_show_research_create_form_with_project_context(user, project, client):
     client.force_login(user)
-    response = client.get(
-        reverse("research:research-create") + f"?project={project.public_id}"
-    )
+    response = client.get(reverse("research:research-create") + f"?project={project.public_id}")
     assert response.status_code == 200
     ctx = response.context
     assert "project" in ctx
@@ -189,9 +184,7 @@ def test_should_show_research_create_form_with_project_context(user, project, cl
 @pytest.mark.django_db
 def test_should_include_breadcrumb_in_research_create(user, workspace, project, client):
     client.force_login(user)
-    response = client.get(
-        reverse("research:research-create") + f"?project={project.public_id}"
-    )
+    response = client.get(reverse("research:research-create") + f"?project={project.public_id}")
     ctx = response.context
     assert "breadcrumb" in ctx
     labels = [b["label"] for b in ctx["breadcrumb"]]
@@ -199,6 +192,7 @@ def test_should_include_breadcrumb_in_research_create(user, workspace, project, 
 
 
 # ── BUG-001: Research not linked to Project after POST ─────────────────────────
+
 
 @pytest.mark.django_db
 @patch("apps.research.tasks.run_research_task.delay")
@@ -234,9 +228,12 @@ def test_should_link_research_to_project_after_create(mock_task, user, project, 
 
 # ── BUG-002: ResearchProject.workspace NULL when created via Project ──────────
 
+
 @pytest.mark.django_db
 @patch("apps.research.tasks.run_research_task.delay")
-def test_should_set_workspace_on_research_when_created_via_project(mock_task, user, project, client):
+def test_should_set_workspace_on_research_when_created_via_project(
+    mock_task, user, project, client
+):
     """BUG-002: ResearchProject.workspace must be set from project.workspace on create.
 
     When a Recherche is created under a Project, both `project` and `workspace`

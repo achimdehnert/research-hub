@@ -1,4 +1,5 @@
 """DRF API views for research-hub."""
+
 from rest_framework import generics, permissions
 
 from apps.research.api.serializers import (
@@ -16,9 +17,7 @@ class ResearchProjectListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return ResearchProject.objects.filter(user=self.request.user, deleted_at__isnull=True)
 
     def perform_create(self, serializer):
         project = serializer.save(user=self.request.user)
@@ -31,9 +30,7 @@ class ResearchProjectDetailView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return ResearchProject.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return ResearchProject.objects.filter(user=self.request.user, deleted_at__isnull=True)
 
 
 class ResearchResultDetailView(generics.RetrieveAPIView):
@@ -42,9 +39,7 @@ class ResearchResultDetailView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return ResearchResult.objects.filter(
-            project__user=self.request.user
-        )
+        return ResearchResult.objects.filter(project__user=self.request.user)
 
 
 class ResearchResultExportView(generics.RetrieveAPIView):
@@ -55,9 +50,9 @@ class ResearchResultExportView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return ResearchResult.objects.filter(
-            project__user=self.request.user
-        ).select_related("project")
+        return ResearchResult.objects.filter(project__user=self.request.user).select_related(
+            "project"
+        )
 
 
 class WorkspaceListView(generics.ListAPIView):
@@ -65,9 +60,7 @@ class WorkspaceListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Workspace.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return Workspace.objects.filter(user=self.request.user, deleted_at__isnull=True)
 
 
 class WorkspaceDetailView(generics.RetrieveAPIView):
@@ -76,6 +69,4 @@ class WorkspaceDetailView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return Workspace.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return Workspace.objects.filter(user=self.request.user, deleted_at__isnull=True)

@@ -16,7 +16,8 @@ def retry_enrichment(modeladmin, request, queryset):
         enrich_knowledge_document_task.delay(doc.pk)
         count += 1
     modeladmin.message_user(
-        request, f"{count} document(s) queued for enrichment.",
+        request,
+        f"{count} document(s) queued for enrichment.",
     )
 
 

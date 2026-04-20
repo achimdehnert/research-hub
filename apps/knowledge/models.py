@@ -7,6 +7,7 @@ Platform Standards:
 - deleted_at for soft-delete
 - UniqueConstraint on outline_id
 """
+
 from __future__ import annotations
 
 import uuid
@@ -40,18 +41,22 @@ class KnowledgeDocument(models.Model):
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     tenant_id = models.BigIntegerField(
-        null=True, blank=True, db_index=True,
+        null=True,
+        blank=True,
+        db_index=True,
         help_text="Tenant isolation. NULL = platform-global knowledge.",
     )
 
     # Outline reference
     outline_id = models.UUIDField(
-        unique=True, db_index=True,
+        unique=True,
+        db_index=True,
         help_text="Outline document UUID (from webhook payload).",
     )
     outline_url = models.URLField(max_length=500, blank=True)
     collection_id = models.UUIDField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="Outline collection UUID.",
     )
 
@@ -68,18 +73,21 @@ class KnowledgeDocument(models.Model):
     # Relations
     related_adr_numbers = ArrayField(
         models.IntegerField(),
-        default=list, blank=True,
+        default=list,
+        blank=True,
         help_text="Referenced ADR numbers, e.g. [142, 143, 145].",
     )
     related_hubs = ArrayField(
         models.CharField(max_length=50),
-        default=list, blank=True,
+        default=list,
+        blank=True,
         help_text="Hub names, e.g. ['research-hub', 'risk-hub'].",
     )
 
     # Content hash for change detection (Phase 12)
     content_hash = models.CharField(
-        max_length=64, blank=True,
+        max_length=64,
+        blank=True,
         help_text="SHA-256 of title+text for change detection.",
     )
 
@@ -87,7 +95,8 @@ class KnowledgeDocument(models.Model):
     summary = models.TextField(blank=True, help_text="AI-generated summary.")
     keywords = ArrayField(
         models.CharField(max_length=100),
-        default=list, blank=True,
+        default=list,
+        blank=True,
         help_text="AI-extracted keywords.",
     )
     enrichment_status = models.CharField(
@@ -99,7 +108,8 @@ class KnowledgeDocument(models.Model):
 
     # Timestamps
     outline_updated_at = models.DateTimeField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="Last update timestamp from Outline.",
     )
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,4 +1,5 @@
 """Research views — HTMX-powered."""
+
 from __future__ import annotations
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,6 +24,7 @@ def _tenant_workspace_qs(request):
 
 
 # ── Workspace views ─────────────────────────────────────────────────────
+
 
 class WorkspaceListView(LoginRequiredMixin, ListView):
     model = Workspace
@@ -59,9 +61,9 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["projects"] = self.object.projects.filter(
-            deleted_at__isnull=True
-        ).order_by("-created_at")
+        ctx["projects"] = self.object.projects.filter(deleted_at__isnull=True).order_by(
+            "-created_at"
+        )
         ctx["breadcrumb"] = [
             {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
             {"label": self.object.name, "url": ""},
@@ -70,6 +72,7 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
 
 
 # ── Project views ──────────────────────────────────────────────────────
+
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project
@@ -120,9 +123,9 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ws = self.object.workspace
         ctx["workspace"] = ws
-        ctx["researches"] = self.object.researches.filter(
-            deleted_at__isnull=True
-        ).order_by("-created_at")
+        ctx["researches"] = self.object.researches.filter(deleted_at__isnull=True).order_by(
+            "-created_at"
+        )
         ctx["breadcrumb"] = [
             {"label": "Workspaces", "url": reverse_lazy("research:workspace-list")},
             {"label": ws.name, "url": ws.get_absolute_url()},
@@ -132,6 +135,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
 
 
 # ── ResearchProject (Recherche) views ────────────────────────────────
+
 
 class ResearchProjectListView(LoginRequiredMixin, ListView):
     model = ResearchProject
@@ -215,9 +219,7 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["latest_result"] = self.object.results.order_by("-id").first()
         project = self.object.project
-        workspace = self.object.workspace or (
-            project.workspace if project else None
-        )
+        workspace = self.object.workspace or (project.workspace if project else None)
         ctx["project"] = project
         ctx["workspace"] = workspace
         if project and workspace:
@@ -246,9 +248,7 @@ def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         workspace__in=_tenant_workspace_qs(request),
     )
     if request.headers.get("HX-Request") == "true":
-        html = render_to_string(
-            "research/partials/project_status.html", {"project": research}
-        )
+        html = render_to_string("research/partials/project_status.html", {"project": research})
         return HttpResponse(html)
     return redirect("research:research-detail", public_id=public_id)
 

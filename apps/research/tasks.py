@@ -1,4 +1,5 @@
 """Celery tasks for async research execution."""
+
 from __future__ import annotations
 
 import asyncio

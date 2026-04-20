@@ -4,6 +4,7 @@ Phase 12: content-hash skip, exponential backoff, rate limiting.
 Uses async_to_sync pattern for Celery worker context (ADR-062).
 AI enrichment via aifw action code `knowledge.enrich` (M2, ADR-095).
 """
+
 from __future__ import annotations
 
 import json
@@ -150,7 +151,8 @@ Antworte EXAKT in diesem JSON-Format:
         mark_enrichment_failed(doc, f"JSON parse error: {exc}")
         logger.warning(
             "Enrichment JSON parse failed for %s: %s",
-            doc.title, content[:200],
+            doc.title,
+            content[:200],
         )
         raise
     except Exception as exc:

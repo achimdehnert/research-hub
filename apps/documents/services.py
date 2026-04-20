@@ -3,6 +3,7 @@
 Pulls documents from Paperless REST API and upserts into DocumentMetadata.
 Paperless = Source of Truth for files + OCR. research-hub = metadata + AI.
 """
+
 from __future__ import annotations
 
 import logging
@@ -81,7 +82,9 @@ def sync_document(paperless_doc: dict[str, Any]) -> tuple[DocumentMetadata, bool
     """
     doc_id = paperless_doc["id"]
     tag_names = paperless_doc.get("tag_names") or []
-    correspondent = paperless_doc.get("correspondent__name") or paperless_doc.get("correspondent_name", "")
+    correspondent = paperless_doc.get("correspondent__name") or paperless_doc.get(
+        "correspondent_name", ""
+    )
 
     # Parse document date
     doc_date = None

@@ -1,4 +1,5 @@
 """Tests for research services layer."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -23,9 +24,7 @@ def test_create_project(db):
 
 @pytest.mark.django_db
 def test_create_project_with_description(db):
-    user = User.objects.create_user(
-        username="svc_user2", password="pass", email="svc2@iil.pet"
-    )
+    user = User.objects.create_user(username="svc_user2", password="pass", email="svc2@iil.pet")
     svc = ResearchProjectService()
     project = svc.create_project(user=user, name="P2", query="query", description="desc")
     assert project.description == "desc"
@@ -33,12 +32,8 @@ def test_create_project_with_description(db):
 
 @pytest.mark.django_db(transaction=True)
 def test_run_research_success():
-    user = User.objects.create_user(
-        username="async_user", password="pass", email="async@iil.pet"
-    )
-    project = ResearchProject.objects.create(
-        user=user, name="Async Project", query="test query"
-    )
+    user = User.objects.create_user(username="async_user", password="pass", email="async@iil.pet")
+    project = ResearchProject.objects.create(user=user, name="Async Project", query="test query")
     mock_output = MagicMock()
     mock_output.success = True
     mock_output.sources = []
@@ -60,9 +55,7 @@ def test_run_research_success():
 
 @pytest.mark.django_db(transaction=True)
 def test_run_research_failure():
-    user = User.objects.create_user(
-        username="fail_user", password="pass", email="fail@iil.pet"
-    )
+    user = User.objects.create_user(username="fail_user", password="pass", email="fail@iil.pet")
     project = ResearchProject.objects.create(user=user, name="Fail Project", query="test")
 
     mock_output = MagicMock()

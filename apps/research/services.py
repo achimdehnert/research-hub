@@ -4,6 +4,7 @@ All LLM calls go through **aifw** (action-code routing, model
 management, secret resolution).  No raw litellm / env-var access
 for API keys.
 """
+
 from __future__ import annotations
 
 import logging
@@ -109,7 +110,8 @@ def _publish_to_content_store(
             },
         )
         logger.info(
-            "Published summary to content-store: %s", ref,
+            "Published summary to content-store: %s",
+            ref,
         )
 
     # --- Deep Analysis ---
@@ -129,14 +131,9 @@ def _publish_to_content_store(
                 "meta": {
                     "query": project.query,
                     "language": project.language,
-                    "model": (
-                        result.deep_analysis_model or ""
-                    ),
+                    "model": (result.deep_analysis_model or ""),
                 },
-                "model_used": (
-                    result.deep_analysis_model
-                    or "aifw:research.deep_analysis"
-                ),
+                "model_used": (result.deep_analysis_model or "aifw:research.deep_analysis"),
                 "prompt_key": "",
             },
         )
@@ -155,7 +152,8 @@ class ResearchProjectService:
     """
 
     def _build_service(
-        self, project: ResearchProject,
+        self,
+        project: ResearchProject,
     ) -> ResearchService:
         brave_key = decouple_config("BRAVE_API_KEY", default="")
         rtype = project.research_type
@@ -163,24 +161,20 @@ class ResearchProjectService:
         use_academic = rtype in ("academic", "combined")
         llm_fn = _make_aifw_llm_fn(ACTION_SUMMARIZE)
         return ResearchService(
-            web_search=(
-                BraveSearchService(api_key=brave_key)
-                if (brave_key and use_web) else None
-            ),
-            academic_search=(
-                AcademicSearchService()
-                if use_academic else None
-            ),
+            web_search=(BraveSearchService(api_key=brave_key) if (brave_key and use_web) else None),
+            academic_search=(AcademicSearchService() if use_academic else None),
             summary_service=AISummaryService(llm_fn=llm_fn),
         )
 
     async def run_research(
-        self, project: ResearchProject,
+        self,
+        project: ResearchProject,
     ) -> ResearchResult:
         """Execute research for a project and persist results."""
         service = self._build_service(project)
         max_sources = ResearchProject.DEPTH_TO_SOURCES.get(
-            project.depth, 15,
+            project.depth,
+            15,
         )
         options: dict[str, Any] = {
             "max_sources": max_sources,
@@ -188,7 +182,8 @@ class ResearchProjectService:
         }
         if project.research_type == "fact_check":
             output: ResearchOutput = await service.fact_check(
-                project.query, sources=max_sources,
+                project.query,
+                sources=max_sources,
             )
         else:
             output = await service.research(
@@ -203,14 +198,8 @@ class ResearchProjectService:
         result = await ResearchResult.objects.acreate(
             project=project,
             query=project.query,
-            sources_json=[
-                s.model_dump(mode="json")
-                for s in output.sources
-            ],
-            findings_json=[
-                f.model_dump(mode="json")
-                for f in output.findings
-            ],
+            sources_json=[s.model_dump(mode="json") for s in output.sources],
+            findings_json=[f.model_dump(mode="json") for f in output.findings],
             summary=output.summary or "",
         )
 
@@ -221,11 +210,13 @@ class ResearchProjectService:
             ).aupdate(status="analysing")
             try:
                 from asgiref.sync import sync_to_async
+
                 config = await sync_to_async(
                     aifw.get_action_config,
                 )(ACTION_DEEP_ANALYSIS)
                 deep = await self._deep_analyze(
-                    project, result,
+                    project,
+                    result,
                 )
                 model_name = config.get("model", "")
                 await ResearchResult.objects.filter(
@@ -250,6 +241,7 @@ class ResearchProjectService:
         if output.success:
             try:
                 from asgiref.sync import sync_to_async
+
                 # Re-fetch result to get deep_analysis if updated
                 fresh = await ResearchResult.objects.filter(
                     pk=result.pk,
@@ -282,23 +274,21 @@ class ResearchProjectService:
             title = s.get("title", "")
             snippet = s.get("snippet", "")
             url = s.get("url", "")
-            source_lines.append(
-                f"[{i}] {title}\n    {snippet}\n    {url}"
-            )
+            source_lines.append(f"[{i}] {title}\n    {snippet}\n    {url}")
         sources_text = "\n".join(source_lines)
 
         # Findings-Kontext
         finding_lines = []
         for f in result.findings_json[:20]:
-            finding_lines.append(
-                f"- {f.get('claim', f.get('text', ''))}"
-            )
+            finding_lines.append(f"- {f.get('claim', f.get('text', ''))}")
         findings_text = "\n".join(finding_lines)
 
         lang = project.language or "de"
         lang_name = {
-            "de": "Deutsch", "en": "English",
-            "fr": "Français", "es": "Español",
+            "de": "Deutsch",
+            "en": "English",
+            "fr": "Français",
+            "es": "Español",
         }.get(lang, lang)
 
         # 1. Try DB-backed prompt (ADR-146)

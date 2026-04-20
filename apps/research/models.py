@@ -1,4 +1,5 @@
 """Research domain models."""
+
 from __future__ import annotations
 
 import uuid
@@ -18,7 +19,9 @@ class Workspace(models.Model):
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     tenant_id = models.UUIDField(
-        null=True, blank=True, db_index=True,
+        null=True,
+        blank=True,
+        db_index=True,
         help_text="Organization.tenant_id from django_tenancy. NULL = personal workspace.",
     )
     user = models.ForeignKey(
@@ -35,9 +38,7 @@ class Workspace(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["user", "name"], name="unique_user_workspace_name"
-            ),
+            models.UniqueConstraint(fields=["user", "name"], name="unique_user_workspace_name"),
         ]
         indexes = [
             models.Index(fields=["tenant_id"], name="idx_workspace_tenant"),
@@ -151,20 +152,14 @@ class ResearchProject(models.Model):
     research_type = models.CharField(
         max_length=20, choices=RESEARCH_TYPE_CHOICES, default="combined"
     )
-    depth = models.CharField(
-        max_length=20, choices=DEPTH_CHOICES, default="standard"
-    )
+    depth = models.CharField(max_length=20, choices=DEPTH_CHOICES, default="standard")
     academic_sources = models.JSONField(
         default=list,
         help_text="Akademische Quellen (arxiv, semantic_scholar, pubmed, openalex)",
     )
     language = models.CharField(max_length=10, default="de")
-    summary_level = models.CharField(
-        max_length=20, choices=SUMMARY_LEVEL_CHOICES, default="medium"
-    )
-    citation_style = models.CharField(
-        max_length=20, choices=CITATION_STYLE_CHOICES, default="none"
-    )
+    summary_level = models.CharField(max_length=20, choices=SUMMARY_LEVEL_CHOICES, default="medium")
+    citation_style = models.CharField(max_length=20, choices=CITATION_STYLE_CHOICES, default="none")
     use_deep_analysis = models.BooleanField(
         default=False,
         help_text="2-Stufen: Erst Llama-Zusammenfassung, dann OpenAI-Tiefenanalyse.",
@@ -187,9 +182,7 @@ class ResearchProject(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["user", "name"], name="unique_user_project_name"
-            ),
+            models.UniqueConstraint(fields=["user", "name"], name="unique_user_project_name"),
         ]
 
     def __str__(self) -> str:
@@ -201,9 +194,7 @@ class ResearchProject(models.Model):
 
 class ResearchResult(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    project = models.ForeignKey(
-        ResearchProject, on_delete=models.CASCADE, related_name="results"
-    )
+    project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE, related_name="results")
     query = models.TextField()
     sources_json = models.JSONField(default=list)
     findings_json = models.JSONField(default=list)
@@ -213,7 +204,8 @@ class ResearchResult(models.Model):
         help_text="Tiefenanalyse durch OpenAI (Stufe 2).",
     )
     deep_analysis_model = models.CharField(
-        max_length=100, blank=True,
+        max_length=100,
+        blank=True,
         help_text="Modell für die Tiefenanalyse, z.B. gpt-4.1",
     )
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,4 +1,5 @@
 """Forms for research app."""
+
 from __future__ import annotations
 
 from django import forms

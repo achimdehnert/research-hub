@@ -5,6 +5,7 @@ research-hub = Metadata, AI enrichments, platform links.
 
 Sync: Paperless → research-hub via Celery task or management command.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -61,11 +62,16 @@ class DocumentMetadata(models.Model):
     )
     title = models.CharField(max_length=500, verbose_name=_("Title"))
     correspondent = models.CharField(
-        max_length=255, blank=True, default="", verbose_name=_("Correspondent"),
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Correspondent"),
     )
     paperless_url = models.URLField(blank=True, verbose_name=_("Paperless URL"))
     tags = models.JSONField(
-        default=list, blank=True, verbose_name=_("Tags"),
+        default=list,
+        blank=True,
+        verbose_name=_("Tags"),
     )
 
     # Classification
@@ -86,29 +92,42 @@ class DocumentMetadata(models.Model):
 
     # Document date (from Paperless, not created_at)
     document_date = models.DateField(
-        null=True, blank=True, db_index=True, verbose_name=_("Document Date"),
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name=_("Document Date"),
     )
 
     # AI enrichment
     ai_summary = models.TextField(blank=True, verbose_name=_("AI Summary"))
     ai_keywords = models.JSONField(
-        default=list, blank=True, verbose_name=_("AI Keywords"),
+        default=list,
+        blank=True,
+        verbose_name=_("AI Keywords"),
     )
     ai_enriched_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("AI Enriched At"),
+        null=True,
+        blank=True,
+        verbose_name=_("AI Enriched At"),
     )
 
     # Sync state
     paperless_updated_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("Last Paperless Update"),
+        null=True,
+        blank=True,
+        verbose_name=_("Last Paperless Update"),
     )
     last_synced_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("Last Synced At"),
+        null=True,
+        blank=True,
+        verbose_name=_("Last Synced At"),
     )
 
     # Soft-delete + timestamps (platform standard)
     deleted_at = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("Deleted At"),
+        null=True,
+        blank=True,
+        verbose_name=_("Deleted At"),
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))

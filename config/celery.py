@@ -1,4 +1,5 @@
 """Celery configuration for research-hub."""
+
 import os
 
 from celery import Celery

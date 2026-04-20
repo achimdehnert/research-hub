@@ -1,4 +1,5 @@
 """Tests for apps.knowledge — HMAC webhook, service layer, model (ADR-145 Phase 12)."""
+
 from __future__ import annotations
 
 import hashlib
@@ -157,9 +158,12 @@ class TestSoftDelete(TestCase):
         assert doc.deleted_at is not None
 
     def test_should_return_false_for_missing(self):
-        assert soft_delete_document(
-            "50000000-0000-0000-0000-000000000005",
-        ) is False
+        assert (
+            soft_delete_document(
+                "50000000-0000-0000-0000-000000000005",
+            )
+            is False
+        )
 
 
 class TestEnrichment(TestCase):
@@ -195,9 +199,7 @@ class TestHMACVerification(TestCase):
     def test_should_verify_valid_signature(self):
         secret = "test-webhook-secret-12345"
         body = b'{"event": "documents.create"}'
-        sig = "sha256=" + hmac.new(
-            secret.encode(), body, hashlib.sha256
-        ).hexdigest()
+        sig = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
         assert _verify_hmac(body, sig, secret) is True
 
     def test_should_reject_invalid_signature(self):
@@ -215,7 +217,9 @@ class TestHMACVerification(TestCase):
         ts = "1773510631094"
         msg = f"{ts}.".encode() + body
         sig_hex = hmac.new(
-            secret.encode(), msg, hashlib.sha256,
+            secret.encode(),
+            msg,
+            hashlib.sha256,
         ).hexdigest()
         sig = f"t={ts},s={sig_hex}"
         assert _verify_hmac(body, sig, secret) is True
@@ -235,9 +239,7 @@ class TestWebhookView(TestCase):
     def _signed_request(self, payload: dict, secret: str | None = None):
         body = json.dumps(payload).encode()
         s = secret or self.secret
-        sig = "sha256=" + hmac.new(
-            s.encode(), body, hashlib.sha256
-        ).hexdigest()
+        sig = "sha256=" + hmac.new(s.encode(), body, hashlib.sha256).hexdigest()
         request = self.factory.post(
             "/knowledge/webhook/outline/",
             data=body,
@@ -249,10 +251,11 @@ class TestWebhookView(TestCase):
     def test_should_reject_unsigned_request(self):
         request = self.factory.post(
             "/knowledge/webhook/outline/",
-            data=b'{}',
+            data=b"{}",
             content_type="application/json",
         )
         from unittest.mock import patch
+
         with patch("apps.knowledge.views._get_webhook_secret", return_value="real-secret"):
             response = outline_webhook(request)
         assert response.status_code == 401
@@ -263,6 +266,7 @@ class TestWebhookView(TestCase):
             secret="wrong-secret",
         )
         from unittest.mock import patch
+
         with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret):
             response = outline_webhook(request)
         assert response.status_code == 401
@@ -274,8 +278,11 @@ class TestWebhookView(TestCase):
         }
         request = self._signed_request(payload)
         from unittest.mock import patch
-        with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret), \
-             patch("apps.knowledge.views.sync_knowledge_document_task") as mock_task:
+
+        with (
+            patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret),
+            patch("apps.knowledge.views.sync_knowledge_document_task") as mock_task,
+        ):
             response = outline_webhook(request)
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -287,6 +294,7 @@ class TestWebhookView(TestCase):
         payload = {"event": "collections.create", "data": {"id": "col-1"}}
         request = self._signed_request(payload)
         from unittest.mock import patch
+
         with patch("apps.knowledge.views._get_webhook_secret", return_value=self.secret):
             response = outline_webhook(request)
         assert response.status_code == 200
