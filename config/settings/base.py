@@ -14,6 +14,8 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-research-hub-dev-key-
 DEBUG = config("DEBUG", default="True").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,research.iil.pet").split(",")
+# ADR-021: Internal hosts for Docker/LB health probes — always present
+ALLOWED_HOSTS.extend(h for h in ("localhost", "127.0.0.1") if h not in ALLOWED_HOSTS)
 
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="https://research.iil.pet").split(",")
 
