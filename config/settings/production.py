@@ -1,5 +1,6 @@
 """Production settings — extends base."""
-import os
+
+from decouple import config
 
 from config.settings.base import *  # noqa: F401, F403
 
@@ -50,6 +51,6 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": os.environ.get("LOG_LEVEL", "INFO"),
+        "level": config("LOG_LEVEL", default="INFO"),
     },
 }

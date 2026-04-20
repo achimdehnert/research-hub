@@ -1,5 +1,6 @@
 """Research Hub — Test Settings (ADR-141: PostgreSQL-Only Testing)"""
-import os
+
+from decouple import config
 
 from .base import *  # noqa: F401, F403
 
@@ -10,21 +11,21 @@ ALLOWED_HOSTS = ["*"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("TEST_DB_NAME", "research_hub_test"),
-        "USER": os.environ.get("TEST_DB_USER", "dehnert"),
-        "PASSWORD": os.environ.get("TEST_DB_PASSWORD", ""),
-        "HOST": os.environ.get("TEST_DB_HOST", ""),
-        "PORT": os.environ.get("TEST_DB_PORT", "5434"),
+        "NAME": config("TEST_DB_NAME", default="research_hub_test"),
+        "USER": config("TEST_DB_USER", default="dehnert"),
+        "PASSWORD": config("TEST_DB_PASSWORD", default=""),
+        "HOST": config("TEST_DB_HOST", default=""),
+        "PORT": config("TEST_DB_PORT", default="5434"),
         "TEST": {"NAME": "test_research_hub"},
     },
     # ADR-130: Shared Content Store (cross-app persistence)
     "content_store": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("CONTENT_STORE_DB_NAME", "content_store_test"),
-        "USER": os.environ.get("CONTENT_STORE_DB_USER", "dehnert"),
-        "PASSWORD": os.environ.get("CONTENT_STORE_DB_PASSWORD", ""),
-        "HOST": os.environ.get("CONTENT_STORE_DB_HOST", ""),
-        "PORT": os.environ.get("CONTENT_STORE_DB_PORT", "5434"),
+        "NAME": config("CONTENT_STORE_DB_NAME", default="content_store_test"),
+        "USER": config("CONTENT_STORE_DB_USER", default="dehnert"),
+        "PASSWORD": config("CONTENT_STORE_DB_PASSWORD", default=""),
+        "HOST": config("CONTENT_STORE_DB_HOST", default=""),
+        "PORT": config("CONTENT_STORE_DB_PORT", default="5434"),
         "TEST": {"NAME": "test_content_store"},
     },
 }
