@@ -6,8 +6,7 @@ ADR-083: No || true, no dummy env vars.
 
 from .base import *  # noqa: F401,F403
 
-SECRET_KEY = "build-dummy-not-used-in-production"
-
+SECRET_KEY = "build-dummy-not-used-in-production"  # hardcoded-ok: build settings
 DEBUG = False
 
 DATABASES = {
