@@ -42,6 +42,6 @@ whitenoise>=6.6
 sentry-sdk>=2.0
 
 # Platform shared packages
-iil-platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context
-django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
-django-module-shop @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-module-shop
+iil-platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=_ARCHIVED/packages/platform-context
+django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=_ARCHIVED/packages/django-tenancy
+django-module-shop @ git+https://github.com/achimdehnert/platform.git#subdirectory=_ARCHIVED/packages/django-module-shop
