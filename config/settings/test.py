@@ -1,4 +1,4 @@
-"""Research Hub — Test Settings (ADR-141: PostgreSQL-Only Testing)"""
+"""Research Hub — Test Settings (ADR-179: PostgreSQL-Only Testing)"""
 
 from decouple import config
 
@@ -7,7 +7,7 @@ from .base import *  # noqa: F401, F403
 DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
-# ADR-141: Explicit PostgreSQL — SQLite is BANNED for testing
+# ADR-179: Explicit PostgreSQL — SQLite is BANNED for testing
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
