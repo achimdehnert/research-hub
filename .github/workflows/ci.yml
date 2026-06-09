@@ -46,7 +46,10 @@ jobs:
           python-version: "3.12"
 
       - name: Configure git for private packages
-        run: git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+        run: |
+          if [ -n "${{ secrets.PROJECT_PAT }}" ]; then
+            git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+          fi
 
       - name: Install dependencies
         run: |
