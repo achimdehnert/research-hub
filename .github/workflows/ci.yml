@@ -51,6 +51,12 @@ jobs:
             git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
           fi
 
+      - name: Install vendored wheels
+        run: |
+          if [ -d wheels/ ] && ls wheels/*.whl 1>/dev/null 2>&1; then
+            pip install wheels/*.whl
+          fi
+
       - name: Install dependencies
         run: |
           pip install -U pip
