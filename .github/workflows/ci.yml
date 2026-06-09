@@ -31,6 +31,12 @@ jobs:
       DB_HOST: localhost
       DB_PORT: "5432"
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_test
+      # config.settings.test reads TEST_DB_* (overrides base DATABASES)
+      TEST_DB_NAME: ci_test
+      TEST_DB_USER: ci
+      TEST_DB_PASSWORD: ci
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: "5432"
       CONTENT_STORE_DB_NAME: ci_test
       CONTENT_STORE_DB_USER: ci
       CONTENT_STORE_DB_PASSWORD: ci
