@@ -3,7 +3,7 @@ FROM python:3.12-slim
 
 ARG APP_NAME=research-hub
 LABEL org.opencontainers.image.source="https://github.com/achimdehnert/${APP_NAME}"
-LABEL org.opencontainers.image.description="Research Hub \u2014 AI-powered research platform"
+LABEL org.opencontainers.image.description="Research Hub — AI-powered research platform"
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -18,10 +18,10 @@ COPY requirements/ /app/requirements/
 COPY wheels/ /app/wheels/
 
 # Install dependencies.
-# GIT_TOKEN is injected at build time via --secret and is never stored
+# PROJECT_PAT is injected at build time via --secret and is never stored
 # in any image layer (BuildKit --mount=type=secret).
-RUN --mount=type=secret,id=GIT_TOKEN,required=true \
-    GIT_TOKEN=$(cat /run/secrets/GIT_TOKEN) \
+RUN --mount=type=secret,id=PROJECT_PAT,required=true \
+    GIT_TOKEN=$(cat /run/secrets/PROJECT_PAT) \
     && git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
     && pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /app/requirements/prod.txt \
