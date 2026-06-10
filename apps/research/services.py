@@ -255,6 +255,18 @@ class ResearchProjectService:
                     project.pk,
                 )
 
+        # Django's async ORM (acreate/aupdate/sync_to_async) runs in the
+        # thread-sensitive worker thread, which opens its own DB connection.
+        # asyncio.run() tears down the event loop but does not close that
+        # connection, leaking a backend session — this breaks test-DB
+        # teardown (TRUNCATE fails: "database is being accessed by other
+        # users") and exhausts the pool for Celery/mgmt-command callers.
+        # Close it in that same worker thread before the loop ends.
+        from asgiref.sync import sync_to_async
+        from django.db import connections
+
+        await sync_to_async(connections.close_all)()
+
         return result
 
     async def _deep_analyze(
