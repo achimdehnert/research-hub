@@ -22,9 +22,7 @@ def _force_cascade_test_flush():
 
     original_sql_flush = DatabaseOperations.sql_flush
 
-    def _cascade_sql_flush(
-        self, style, tables, *, reset_sequences=False, allow_cascade=False
-    ):
+    def _cascade_sql_flush(self, style, tables, *, reset_sequences=False, allow_cascade=False):
         return original_sql_flush(
             self, style, tables, reset_sequences=reset_sequences, allow_cascade=True
         )
