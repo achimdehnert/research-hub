@@ -31,6 +31,12 @@ jobs:
       DB_HOST: localhost
       DB_PORT: "5432"
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_test
+      # config.settings.test reads TEST_DB_* (overrides base DATABASES)
+      TEST_DB_NAME: ci_test
+      TEST_DB_USER: ci
+      TEST_DB_PASSWORD: ci
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: "5432"
       CONTENT_STORE_DB_NAME: ci_test
       CONTENT_STORE_DB_USER: ci
       CONTENT_STORE_DB_PASSWORD: ci
@@ -46,12 +52,21 @@ jobs:
           python-version: "3.12"
 
       - name: Configure git for private packages
-        run: git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+        run: |
+          if [ -n "${{ secrets.PROJECT_PAT }}" ]; then
+            git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+          fi
+
+      - name: Install vendored wheels
+        run: |
+          if [ -d wheels/ ] && ls wheels/*.whl 1>/dev/null 2>&1; then
+            pip install wheels/*.whl
+          fi
 
       - name: Install dependencies
         run: |
           pip install -U pip
-          pip install -r requirements/prod.txt
+          pip install -r requirements/dev.txt
 
       - name: Lint with ruff
         run: |
