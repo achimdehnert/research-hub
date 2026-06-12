@@ -16,10 +16,19 @@
       {% endif %}
     </div>
   </div>
-  <a href="{% url 'research:research-create' %}?project={{ project.public_id }}"
-     class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-circle me-1"></i>Neue Recherche
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'research:research-create' %}?project={{ project.public_id }}"
+       class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Neue Recherche
+    </a>
+    <form method="post" action="{% url 'research:project-delete' project_id=project.public_id %}"
+          onsubmit="return confirm('Projekt „{{ project.name|escapejs }}“ inklusive aller Recherchen löschen?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Projekt löschen" title="Projekt löschen">
+        <i class="bi bi-trash" aria-hidden="true"></i>
+      </button>
+    </form>
+  </div>
 </div>
 
 {% if researches %}

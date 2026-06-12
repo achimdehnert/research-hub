@@ -68,12 +68,9 @@ class ResearchProjectSerializer(serializers.ModelSerializer):
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
-    project_count = serializers.SerializerMethodField()
+    project_count = serializers.IntegerField(source="num_projects", read_only=True)
 
     class Meta:
         model = Workspace
         fields = ["public_id", "name", "description", "project_count", "created_at"]
         read_only_fields = fields
-
-    def get_project_count(self, obj) -> int:
-        return obj.projects.filter(deleted_at__isnull=True).count()

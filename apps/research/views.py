@@ -2,16 +2,29 @@
 
 from __future__ import annotations
 
+import uuid
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm
 from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
-from apps.research.tasks import run_research_task
+from apps.research.tasks import (
+    REFORMAT_CACHE_TTL,
+    reformat_summary_task,
+    run_research_task,
+)
+
+REFORMAT_FORMATS = {"structured", "bullets", "compact", "narrative", "academic", "qa"}
 
 
 def _tenant_workspace_qs(request):
@@ -30,6 +43,7 @@ class WorkspaceListView(LoginRequiredMixin, ListView):
     model = Workspace
     template_name = "research/workspace_list.html"
     context_object_name = "workspaces"
+    paginate_by = 24
 
     def get_queryset(self):
         return _tenant_workspace_qs(self.request).prefetch_related("projects")
@@ -117,7 +131,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         return Project.objects.filter(
             workspace__in=_tenant_workspace_qs(self.request),
             deleted_at__isnull=True,
-        )
+        ).select_related("workspace")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -141,12 +155,13 @@ class ResearchProjectListView(LoginRequiredMixin, ListView):
     model = ResearchProject
     template_name = "research/research_list.html"
     context_object_name = "researches"
+    paginate_by = 24
 
     def get_queryset(self):
         return ResearchProject.objects.filter(
             workspace__in=_tenant_workspace_qs(self.request),
             deleted_at__isnull=True,
-        )
+        ).select_related("workspace", "project", "project__workspace")
 
 
 class ResearchProjectCreateView(LoginRequiredMixin, CreateView):
@@ -254,7 +269,11 @@ def project_status_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
 
 
 def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
-    """HTMX endpoint: reformat existing summary."""
+    """HTMX endpoint: dispatch summary reformat to Celery, return polling partial.
+
+    The LLM call runs in a worker — the request never blocks on it. The
+    result lands in the cache under a one-shot key the polling endpoint reads.
+    """
     if request.method != "POST" or request.headers.get("HX-Request") != "true":
         return HttpResponse(status=400)
 
@@ -268,40 +287,105 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         return HttpResponse("<p class='text-muted'>Keine Zusammenfassung vorhanden.</p>")
 
     target_format = request.POST.get("target_format", "structured")
+    if target_format not in REFORMAT_FORMATS:
+        return HttpResponse(status=400)
 
-    try:
-        from authoringfw.text import ReformatTask, TextReformatter
-
-        llm_fn = _make_sync_aifw_llm()
-        reformatter = TextReformatter(llm_fn=llm_fn)
-        reformat_result = reformatter.reformat(
-            ReformatTask(
-                source_text=result.summary,
-                target_format=target_format,
-                language=research.language or "de",
-            )
-        )
-        reformatted_text = reformat_result.content
-    except Exception:  # noqa: BLE001
-        reformatted_text = result.summary
+    cache_key = f"reformat:{result.pk}:{target_format}:{uuid.uuid4().hex[:12]}"
+    cache.set(cache_key, {"status": "pending"}, REFORMAT_CACHE_TTL)
+    reformat_summary_task.delay(result.pk, target_format, research.language or "de", cache_key)
 
     html = render_to_string(
-        "research/partials/summary_body.html",
-        {"summary": reformatted_text, "target_format": target_format},
+        "research/partials/summary_reformat_pending.html",
+        {"research": research, "reformat_key": cache_key},
         request=request,
     )
     return HttpResponse(html)
 
 
-def _make_sync_aifw_llm():
-    """Sync LLM callable via aifw for TextReformatter."""
-    import aifw
+def summary_reformat_status(request: HttpRequest, public_id: str) -> HttpResponse:
+    """HTMX polling endpoint: return reformatted summary once the task finished."""
+    research = get_object_or_404(
+        ResearchProject,
+        public_id=public_id,
+        workspace__in=_tenant_workspace_qs(request),
+    )
+    result = ResearchResult.objects.filter(project=research).order_by("-id").first()
+    cache_key = request.GET.get("key", "")
+    # Key must belong to this (tenant-checked) research's result — no cache probing
+    if not result or not cache_key.startswith(f"reformat:{result.pk}:"):
+        return HttpResponse(status=400)
 
-    def _call(prompt: str) -> str:
-        result = aifw.sync_completion(
-            action_code="research.reformat",
-            messages=[{"role": "user", "content": prompt}],
+    data = cache.get(cache_key)
+    if data is None:
+        return HttpResponse(
+            "<p class='text-muted'>Formatierung abgelaufen — bitte erneut versuchen.</p>"
         )
-        return (result.content or "").strip()
+    if data.get("status") != "done":
+        html = render_to_string(
+            "research/partials/summary_reformat_pending.html",
+            {"research": research, "reformat_key": cache_key},
+            request=request,
+        )
+        return HttpResponse(html)
 
-    return _call
+    cache.delete(cache_key)
+    html = render_to_string(
+        "research/partials/summary_body.html",
+        {"summary": data.get("summary", ""), "target_format": data.get("target_format")},
+        request=request,
+    )
+    return HttpResponse(html)
+
+
+# ── Soft-delete views ──────────────────────────────────────────────────
+
+
+@login_required
+@require_POST
+def workspace_delete(request: HttpRequest, public_id: str) -> HttpResponse:
+    """Soft-delete a workspace including its projects and researches."""
+    workspace = get_object_or_404(_tenant_workspace_qs(request), public_id=public_id)
+    now = timezone.now()
+    ResearchProject.objects.filter(workspace=workspace, deleted_at__isnull=True).update(
+        deleted_at=now
+    )
+    Project.objects.filter(workspace=workspace, deleted_at__isnull=True).update(deleted_at=now)
+    Workspace.objects.filter(pk=workspace.pk).update(deleted_at=now)
+    messages.success(request, f"Workspace „{workspace.name}“ wurde gelöscht.")
+    return redirect("research:workspace-list")
+
+
+@login_required
+@require_POST
+def project_delete(request: HttpRequest, project_id: str) -> HttpResponse:
+    """Soft-delete a project including its researches."""
+    project = get_object_or_404(
+        Project.objects.filter(
+            workspace__in=_tenant_workspace_qs(request),
+            deleted_at__isnull=True,
+        ).select_related("workspace"),
+        public_id=project_id,
+    )
+    now = timezone.now()
+    ResearchProject.objects.filter(project=project, deleted_at__isnull=True).update(deleted_at=now)
+    Project.objects.filter(pk=project.pk).update(deleted_at=now)
+    messages.success(request, f"Projekt „{project.name}“ wurde gelöscht.")
+    return redirect(project.workspace.get_absolute_url())
+
+
+@login_required
+@require_POST
+def research_delete(request: HttpRequest, public_id: str) -> HttpResponse:
+    """Soft-delete a single research."""
+    research = get_object_or_404(
+        ResearchProject.objects.filter(
+            workspace__in=_tenant_workspace_qs(request),
+            deleted_at__isnull=True,
+        ).select_related("project"),
+        public_id=public_id,
+    )
+    ResearchProject.objects.filter(pk=research.pk).update(deleted_at=timezone.now())
+    messages.success(request, f"Recherche „{research.name}“ wurde gelöscht.")
+    if research.project:
+        return redirect(research.project.get_absolute_url())
+    return redirect("research:workspace-list")

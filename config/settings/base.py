@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-research-hub-dev-key-change-in-prod")
 
-DEBUG = config("DEBUG", default="True").lower() in ("true", "1", "yes")
+DEBUG = config("DEBUG", default="False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,research.iil.pet").split(",")
 # ADR-021: Internal hosts for Docker/LB health probes — always present
@@ -157,8 +157,27 @@ MEDIA_ROOT = BASE_DIR / "media"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+# Redis — broker (db 0) and cache (db 1, unless CACHE_URL overrides)
+REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+_default_cache_url = (
+    REDIS_URL.rsplit("/", 1)[0] + "/1" if REDIS_URL.count("/") >= 3 else REDIS_URL
+)
+CACHE_URL = config("CACHE_URL", default=_default_cache_url)
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": CACHE_URL,
+        "KEY_PREFIX": "research_hub",
+        "TIMEOUT": 300,
+    }
+}
+
+# Sessions survive a Redis restart (DB-backed), reads hit the cache
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
 # Celery
-CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "django-cache"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

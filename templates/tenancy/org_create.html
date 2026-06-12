@@ -9,17 +9,28 @@
         <p class="text-muted small mb-4">Erstelle eine Organisation für dein Team</p>
         <form method="post">
           {% csrf_token %}
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
           <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input type="text" name="name" class="form-control" placeholder="Meine Firma GmbH" required>
+            <label class="form-label" for="id_name">Name</label>
+            <input type="text" name="name" id="id_name" class="form-control{% if form.name.errors %} is-invalid{% endif %}"
+                   placeholder="Meine Firma GmbH" value="{{ form.name.value|default:'' }}" required>
+            {% for error in form.name.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
           </div>
           <div class="mb-4">
-            <label class="form-label">Subdomain-Slug</label>
+            <label class="form-label" for="id_slug">Subdomain-Slug</label>
             <div class="input-group">
-              <input type="text" name="slug" class="form-control" placeholder="meine-firma"
+              <input type="text" name="slug" id="id_slug" class="form-control{% if form.slug.errors %} is-invalid{% endif %}"
+                     placeholder="meine-firma" value="{{ form.slug.value|default:'' }}"
                      pattern="[a-z0-9-]+" title="Nur Kleinbuchstaben, Zahlen und Bindestriche" required>
               <span class="input-group-text text-muted" style="background:#0f1117;border-color:#2d3148">.research.iil.pet</span>
             </div>
+            {% for error in form.slug.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
             <div class="form-text text-muted">Wird für die Subdomain verwendet: <code>slug.research.iil.pet</code></div>
           </div>
           <div class="d-grid gap-2">
