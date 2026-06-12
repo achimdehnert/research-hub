@@ -47,4 +47,14 @@ jobs:
       image_tag_override: ${{ inputs.image_tag_override || '' }}
       target_environment: ${{ inputs.target_environment || 'production' }}
       notify_discord: true
-    secrets: inherit
+    # Explizites Mapping statt `inherit`: shared-ci liegt in iilgmbh, dieses
+    # Repo unter achimdehnert — cross-owner reicht `inherit` keine Secrets
+    # durch (Build sah PROJECT_PAT= leer, Runs 27426635409/27426357913).
+    secrets:
+      PROJECT_PAT: ${{ secrets.PROJECT_PAT }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+      STAGING_HOST: ${{ secrets.STAGING_HOST }}
+      STAGING_USER: ${{ secrets.STAGING_USER }}
