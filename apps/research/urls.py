@@ -46,6 +46,27 @@ urlpatterns = [
         views.summary_reformat_htmx,
         name="summary-reformat",
     ),
+    path(
+        "research/<uuid:public_id>/reformat/status/",
+        views.summary_reformat_status,
+        name="summary-reformat-status",
+    ),
+    # Soft-delete
+    path(
+        "workspaces/<uuid:public_id>/delete/",
+        views.workspace_delete,
+        name="workspace-delete",
+    ),
+    path(
+        "projects/<uuid:project_id>/delete/",
+        views.project_delete,
+        name="project-delete",
+    ),
+    path(
+        "research/<uuid:public_id>/delete/",
+        views.research_delete,
+        name="research-delete",
+    ),
     # aifw admin dashboard (staff-only)
     path(
         "admin/aifw/",

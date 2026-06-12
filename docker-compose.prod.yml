@@ -33,7 +33,7 @@ services:
     image: redis:7-alpine
     container_name: research_hub_redis
     restart: unless-stopped
-    command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "volatile-lru", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

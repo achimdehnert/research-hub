@@ -39,6 +39,14 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# No Redis in CI — in-memory cache is enough for dedup/rate-limit/reformat tests
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 SILENCED_SYSTEM_CHECKS = [

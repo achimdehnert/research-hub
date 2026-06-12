@@ -1,0 +1,7 @@
+<div hx-get="{% url 'research:summary-reformat-status' public_id=research.public_id %}?key={{ reformat_key|urlencode }}"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML"
+     class="text-muted py-3">
+  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+  Formatierung läuft…
+</div>

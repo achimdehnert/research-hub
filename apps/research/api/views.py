@@ -1,5 +1,6 @@
 """DRF API views for research-hub."""
 
+from django.db.models import Count, Q
 from rest_framework import generics, permissions
 
 from apps.research.api.serializers import (
@@ -55,12 +56,21 @@ class ResearchResultExportView(generics.RetrieveAPIView):
         )
 
 
+def _workspace_qs(user):
+    # num_projects via annotation — one query instead of one COUNT per workspace
+    return (
+        Workspace.objects.filter(user=user, deleted_at__isnull=True)
+        .annotate(num_projects=Count("projects", filter=Q(projects__deleted_at__isnull=True)))
+        .order_by("-created_at")
+    )
+
+
 class WorkspaceListView(generics.ListAPIView):
     serializer_class = WorkspaceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Workspace.objects.filter(user=self.request.user, deleted_at__isnull=True)
+        return _workspace_qs(self.request.user)
 
 
 class WorkspaceDetailView(generics.RetrieveAPIView):
@@ -69,4 +79,4 @@ class WorkspaceDetailView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return Workspace.objects.filter(user=self.request.user, deleted_at__isnull=True)
+        return _workspace_qs(self.request.user)

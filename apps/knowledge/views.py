@@ -27,6 +27,22 @@ logger = logging.getLogger(__name__)
 
 DEDUP_TTL = 5  # seconds — Outline fires create+publish simultaneously
 
+RATE_LIMIT_MAX = 120  # requests per client IP per window
+RATE_LIMIT_WINDOW = 60  # seconds
+
+
+def _rate_limited(request) -> bool:
+    """Cache-based per-IP rate limit — runs before HMAC to cap CPU spend on spam."""
+    ip = request.META.get("REMOTE_ADDR", "unknown")
+    key = f"outline_wh_rate:{ip}"
+    if cache.add(key, 1, RATE_LIMIT_WINDOW):
+        return False
+    try:
+        count = cache.incr(key)
+    except ValueError:  # key expired between add and incr
+        return False
+    return count > RATE_LIMIT_MAX
+
 
 def _get_webhook_secret() -> str:
     """Lazy-load secret (allows rotation without restart)."""
@@ -90,6 +106,9 @@ def outline_webhook(request):
     Verifies HMAC-SHA256 signature, then dispatches to Celery tasks.
     Events: documents.create, documents.update, documents.delete.
     """
+    if _rate_limited(request):
+        return JsonResponse({"error": "Rate limit exceeded"}, status=429)
+
     signature = request.headers.get("Outline-Signature", "") or request.headers.get(
         "X-Outline-Signature", ""
     )
