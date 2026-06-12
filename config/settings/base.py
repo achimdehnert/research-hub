@@ -159,9 +159,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Redis — broker (db 0) and cache (db 1, unless CACHE_URL overrides)
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
-_default_cache_url = (
-    REDIS_URL.rsplit("/", 1)[0] + "/1" if REDIS_URL.count("/") >= 3 else REDIS_URL
-)
+_default_cache_url = REDIS_URL.rsplit("/", 1)[0] + "/1" if REDIS_URL.count("/") >= 3 else REDIS_URL
 CACHE_URL = config("CACHE_URL", default=_default_cache_url)
 
 CACHES = {
