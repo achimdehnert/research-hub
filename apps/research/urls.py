@@ -85,12 +85,4 @@ urlpatterns = [
     ),
     # Research list (used by base.html nav)
     path("research/", views.ResearchProjectListView.as_view(), name="research-list"),
-    # Legacy aliases
-    path("projects/", views.ResearchProjectListView.as_view(), name="project-list"),
-    path("projects/new/", views.ResearchProjectCreateView.as_view(), name="project-create-legacy"),
-    path(
-        "projects/<uuid:public_id>/",
-        views.ResearchProjectDetailView.as_view(),
-        name="project-detail-legacy",
-    ),
 ]
