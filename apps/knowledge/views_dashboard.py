@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -38,7 +39,13 @@ def knowledge_dashboard(request: HttpRequest) -> HttpResponse:
             | Q(keywords__contains=[search_query])
         )
 
-    documents = qs.order_by("-updated_at")[:100]
+    paginator = Paginator(qs.order_by("-updated_at"), 50)
+    documents = paginator.get_page(request.GET.get("page"))
+
+    # Query string without page — pagination links keep active filters
+    filter_params = request.GET.copy()
+    filter_params.pop("page", None)
+    base_query = filter_params.urlencode()
 
     # Stats
     all_docs = KnowledgeDocument.objects.filter(deleted_at__isnull=True)
@@ -74,6 +81,8 @@ def knowledge_dashboard(request: HttpRequest) -> HttpResponse:
         "knowledge/dashboard.html",
         {
             "documents": documents,
+            "page_obj": documents,
+            "base_query": base_query,
             "stats": stats,
             "categories": categories,
             "category_filter": category_filter,

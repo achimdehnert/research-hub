@@ -158,9 +158,5 @@
   </div>
 </div>
 
-{% if documents|length >= 100 %}
-<div class="text-muted text-center mt-3 small">
-  Zeige die ersten 100 Dokumente. Nutze die Suche oder Filter um einzugrenzen.
-</div>
-{% endif %}
+{% include "partials/pagination.html" %}
 {% endblock %}

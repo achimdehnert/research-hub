@@ -14,10 +14,19 @@
       {% endif %}
     </div>
   </div>
-  <a href="{% url 'research:project-create' workspace_id=workspace.public_id %}"
-     class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-circle me-1"></i>Neues Projekt
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'research:project-create' workspace_id=workspace.public_id %}"
+       class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Neues Projekt
+    </a>
+    <form method="post" action="{% url 'research:workspace-delete' public_id=workspace.public_id %}"
+          onsubmit="return confirm('Workspace „{{ workspace.name|escapejs }}“ inklusive aller Projekte und Recherchen löschen?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Workspace löschen" title="Workspace löschen">
+        <i class="bi bi-trash" aria-hidden="true"></i>
+      </button>
+    </form>
+  </div>
 </div>
 
 {% if projects %}
