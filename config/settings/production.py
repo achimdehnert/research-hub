@@ -13,6 +13,13 @@ CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# HSTS — org subdomains (slug.research.iil.pet) get their own header when visited
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=2592000, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default="False"
+).lower() in ("true", "1", "yes")
+SECURE_HSTS_PRELOAD = False
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

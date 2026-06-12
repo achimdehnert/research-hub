@@ -60,11 +60,8 @@ def _check_auth(request: HttpRequest) -> bool:
         except Exception:
             pass
 
-    # Query param token
-    token = request.GET.get("token", "")
-    if METRICS_TOKEN and token == METRICS_TOKEN:
-        return True
-
+    # NOTE: query-param tokens are deliberately NOT supported — they leak
+    # into access logs and proxies. Use the Authorization header.
     return False
 
 
