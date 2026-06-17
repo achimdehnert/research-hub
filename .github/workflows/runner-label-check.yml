@@ -1,0 +1,77 @@
+name: "Runner-Label-Check"
+
+# Verhindert tote self-hosted-Runner-Label-Pins, BEVOR sie Merges blockieren.
+# Hintergrund: 2026-06-17 hing complete-check.yml unbegrenzt, weil auf
+# [self-hosted, hetzner] gepinnt — das hetzner-Label trug nur ein offline,
+# verwaister Runner → 13h lang ALLE risk-hub-Merges blockiert.
+#
+# Dieser Standalone läuft PR-getriggert (das org-weite Pendant in
+# _ci-python.yml greift nur, wo _ci-python aus einer PR-getriggerten ci.yml
+# gecallt wird — hier wird es nur aus push-getriggerter deploy.yml gecallt,
+# also bräuchte es sonst keinen Pre-Merge-Schutz).
+#
+# Läuft bewusst auf ubuntu-latest: ein Gate gegen tote self-hosted-Labels darf
+# NICHT selbst von einem self-hosted-Runner abhängen.
+# Konvention/SoT: platform/infra/hosts.yaml.
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+jobs:
+  label-check:
+    name: "Keine toten self-hosted-Label-Pins"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: "runs-on Labels prüfen"
+        run: |
+          python3 - <<'PY'
+          import sys, glob, yaml
+
+          AUTO = {"self-hosted", "linux", "x64"}
+          ALLOWED_EXTRA = set()  # neuer dedizierter Runner: hier + hosts.yaml (status: online)
+          HOSTED = ("ubuntu", "windows", "macos")
+
+          issues = []
+          for wf in sorted(glob.glob(".github/workflows/*.yml") + glob.glob(".github/workflows/*.yaml")):
+              try:
+                  doc = yaml.safe_load(open(wf).read()) or {}
+              except yaml.YAMLError as e:
+                  issues.append(f"{wf}: YAML nicht parsebar ({e})")
+                  continue
+              for job_id, job in (doc.get("jobs", {}) or {}).items():
+                  if not isinstance(job, dict):
+                      continue
+                  ro = job.get("runs-on")
+                  labels = [ro] if isinstance(ro, str) else (ro or [])
+                  low = {str(x).lower() for x in labels}
+                  if any(any(l.startswith(h) for h in HOSTED) for l in low):
+                      continue
+                  if "self-hosted" not in low:
+                      continue
+                  extra = {str(x) for x in labels if str(x).lower() not in AUTO and str(x) not in ALLOWED_EXTRA}
+                  if extra:
+                      issues.append(
+                          f"{wf}: job '{job_id}' runs-on {labels} — Zusatz-Label {sorted(extra)} "
+                          f"ist nicht garantiert von einem Online-Runner gedeckt (toter-Pin-Risiko). "
+                          f"Fix: runs-on: self-hosted (Konvention: platform/infra/hosts.yaml)."
+                      )
+
+          if issues:
+              print(f"::error::Runner-Label-Check: {len(issues)} Finding(s)")
+              for i in issues:
+                  print(f"  - {i}")
+              sys.exit(1)
+          print("OK — kein self-hosted-Workflow nutzt ein ungedecktes Runner-Label.")
+          PY
