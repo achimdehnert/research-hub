@@ -54,7 +54,7 @@ services:
       - research_hub_network
 
   research-hub-web:
-    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}/research-hub-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}:${IMAGE_TAG:-latest}
     container_name: research_hub_web
     restart: unless-stopped
     env_file: .env.prod
@@ -92,7 +92,7 @@ services:
       - research_hub_network
 
   research-hub-worker:
-    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}/research-hub-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-research-hub}:${IMAGE_TAG:-latest}
     container_name: research_hub_worker
     restart: unless-stopped
     env_file: .env.prod
