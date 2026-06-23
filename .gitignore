@@ -16,6 +16,10 @@ staticfiles/
 media/
 db.sqlite3
 
+# Secrets — real key material must never be tracked (ADR-045)
+docker/secrets/*
+!docker/secrets/.gitkeep
+
 # IDE agent workflows (symlinked, not repo-specific)
 .windsurf/
 .windsurfignore
