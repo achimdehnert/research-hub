@@ -51,7 +51,12 @@ class ResearchResultExportSerializer(serializers.ModelSerializer):
 
 
 class ResearchProjectSerializer(serializers.ModelSerializer):
-    results = ResearchResultSerializer(many=True, read_only=True)
+    results = serializers.SerializerMethodField()
+
+    def get_results(self, obj):
+        # Exclude soft-deleted results — they must not surface via the API.
+        active = obj.results.filter(deleted_at__isnull=True).order_by("-created_at")
+        return ResearchResultSerializer(active, many=True).data
 
     class Meta:
         model = ResearchProject

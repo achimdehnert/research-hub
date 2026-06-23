@@ -21,7 +21,9 @@ def run_research_task(self, project_id: int) -> None:
         project = ResearchProject.objects.get(pk=project_id)
         ResearchProject.objects.filter(pk=project_id).update(status="running")
         service = ResearchProjectService()
-        asyncio.run(service.run_research(project))
+        # request.id is stable across retries of the same task → idempotent run.
+        run_token = str(self.request.id or "")
+        asyncio.run(service.run_research(project, run_token=run_token))
     except ResearchProject.DoesNotExist:
         logger.error("ResearchProject %s not found", project_id)
     except Exception as exc:
