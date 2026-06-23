@@ -1,4 +1,11 @@
-"""DRF API views for research-hub."""
+"""DRF API views for research-hub.
+
+Scope: every queryset is filtered to ``request.user`` (or ``project__user``).
+The ``/api/`` prefix is tenant-exempt in the middleware, so the API has no
+org/tenant context — it intentionally exposes only the caller's *personal*
+objects, never org-shared workspaces (those are reachable via the web UI).
+Soft-deleted rows (``deleted_at`` set) are excluded everywhere.
+"""
 
 from django.db.models import Count, Q
 from rest_framework import generics, permissions
@@ -40,7 +47,11 @@ class ResearchResultDetailView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return ResearchResult.objects.filter(project__user=self.request.user)
+        return ResearchResult.objects.filter(
+            project__user=self.request.user,
+            deleted_at__isnull=True,
+            project__deleted_at__isnull=True,
+        )
 
 
 class ResearchResultExportView(generics.RetrieveAPIView):
@@ -51,9 +62,11 @@ class ResearchResultExportView(generics.RetrieveAPIView):
     lookup_field = "public_id"
 
     def get_queryset(self):
-        return ResearchResult.objects.filter(project__user=self.request.user).select_related(
-            "project"
-        )
+        return ResearchResult.objects.filter(
+            project__user=self.request.user,
+            deleted_at__isnull=True,
+            project__deleted_at__isnull=True,
+        ).select_related("project")
 
 
 def _workspace_qs(user):

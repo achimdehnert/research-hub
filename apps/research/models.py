@@ -195,6 +195,13 @@ class ResearchProject(models.Model):
 class ResearchResult(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE, related_name="results")
+    run_token = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Idempotency key per research run (Celery task id) — dedupes retries.",
+    )
     query = models.TextField()
     sources_json = models.JSONField(default=list)
     findings_json = models.JSONField(default=list)

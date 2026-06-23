@@ -7,7 +7,9 @@ for API keys.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import uuid
 from typing import Any
 
 import aifw
@@ -27,6 +29,20 @@ logger = logging.getLogger(__name__)
 # aifw action codes (seeded via `manage.py seed_aifw`)
 ACTION_SUMMARIZE = "research.summarize"
 ACTION_DEEP_ANALYSIS = "research.deep_analysis"
+
+
+def _tenant_int(tenant_uuid: uuid.UUID) -> int:
+    """Map a tenant UUID to a stable, collision-safe BigInteger.
+
+    ``content_store.ContentItem.tenant_id`` is a signed 64-bit
+    ``BigIntegerField``; a tenant is a 128-bit UUID, so it cannot be
+    stored verbatim.  We derive a stable 63-bit value (fits signed
+    bigint) via blake2b.  Birthday-collision bound ~3.9e9 tenants —
+    versus the previous ``int(hex[:8], 16)`` 32-bit truncation, which
+    collided at ~77k tenants and silently mislabelled cross-tenant rows.
+    """
+    digest = hashlib.blake2b(tenant_uuid.bytes, digest_size=8).digest()
+    return int.from_bytes(digest, "big") & 0x7FFF_FFFF_FFFF_FFFF
 
 
 def _make_aifw_llm_fn(action_code: str = ACTION_SUMMARIZE):
@@ -65,8 +81,6 @@ def _publish_to_content_store(
     Creates/updates ContentItem entries for summary and deep
     analysis so other hubs can access them.
     """
-    import hashlib
-
     try:
         from content_store.models import ContentItem
     except ImportError:
@@ -77,8 +91,7 @@ def _publish_to_content_store(
     tenant_id = 0
     ws = project.workspace
     if ws and ws.tenant_id:
-        # Use first 8 hex digits of UUID as integer
-        tenant_id = int(str(ws.tenant_id).replace("-", "")[:8], 16)
+        tenant_id = _tenant_int(ws.tenant_id)
 
     ref = str(project.public_id)
 
@@ -169,8 +182,16 @@ class ResearchProjectService:
     async def run_research(
         self,
         project: ResearchProject,
+        run_token: str = "",
     ) -> ResearchResult:
-        """Execute research for a project and persist results."""
+        """Execute research for a project and persist results.
+
+        ``run_token`` makes the run idempotent: the Celery task passes its
+        (retry-stable) task id, so a retried task reuses the same
+        ResearchResult instead of creating a duplicate.  An empty token
+        falls back to a fresh uuid (always a new row — no dedup).
+        """
+        run_token = run_token or uuid.uuid4().hex
         service = self._build_service(project)
         max_sources = ResearchProject.DEPTH_TO_SOURCES.get(
             project.depth,
@@ -195,12 +216,15 @@ class ResearchProjectService:
                 },
             )
 
-        result = await ResearchResult.objects.acreate(
+        result, _ = await ResearchResult.objects.aupdate_or_create(
             project=project,
-            query=project.query,
-            sources_json=[s.model_dump(mode="json") for s in output.sources],
-            findings_json=[f.model_dump(mode="json") for f in output.findings],
-            summary=output.summary or "",
+            run_token=run_token,
+            defaults={
+                "query": project.query,
+                "sources_json": [s.model_dump(mode="json") for s in output.sources],
+                "findings_json": [f.model_dump(mode="json") for f in output.findings],
+                "summary": output.summary or "",
+            },
         )
 
         # --- Stufe 2: Tiefenanalyse via aifw ---

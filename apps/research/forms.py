@@ -26,14 +26,12 @@ class ProjectForm(forms.ModelForm):
 
 
 class ResearchProjectForm(forms.ModelForm):
-    academic_sources = forms.MultipleChoiceField(
-        choices=ResearchProject.ACADEMIC_SOURCE_CHOICES,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        initial=["arxiv", "semantic_scholar", "pubmed", "openalex"],
-        label="Akademische Quellen",
-    )
-
+    # NOTE: per-source selection (arxiv/pubmed/…) is intentionally NOT a form
+    # field. iil_researchfw's ResearchService._academic_results calls
+    # AcademicSearchService.search() without forwarding a ``sources`` list and
+    # ResearchContext has no such field, so the choice was silently ignored —
+    # a misleading UI. Academic search is driven by ``research_type`` alone.
+    # Re-add this once iil_researchfw threads ``sources`` through ResearchContext.
     class Meta:
         model = ResearchProject
         fields = [
@@ -42,7 +40,6 @@ class ResearchProjectForm(forms.ModelForm):
             "description",
             "research_type",
             "depth",
-            "academic_sources",
             "language",
             "summary_level",
             "citation_style",
@@ -52,6 +49,3 @@ class ResearchProjectForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
             "query": forms.Textarea(attrs={"rows": 3}),
         }
-
-    def clean_academic_sources(self) -> list[str]:
-        return self.cleaned_data.get("academic_sources") or []

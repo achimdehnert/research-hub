@@ -232,7 +232,9 @@ class ResearchProjectDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["latest_result"] = self.object.results.order_by("-id").first()
+        ctx["latest_result"] = (
+            self.object.results.filter(deleted_at__isnull=True).order_by("-id").first()
+        )
         project = self.object.project
         workspace = self.object.workspace or (project.workspace if project else None)
         ctx["project"] = project
@@ -282,7 +284,11 @@ def summary_reformat_htmx(request: HttpRequest, public_id: str) -> HttpResponse:
         public_id=public_id,
         workspace__in=_tenant_workspace_qs(request),
     )
-    result = ResearchResult.objects.filter(project=research).order_by("-id").first()
+    result = (
+        ResearchResult.objects.filter(project=research, deleted_at__isnull=True)
+        .order_by("-id")
+        .first()
+    )
     if not result or not result.summary:
         return HttpResponse("<p class='text-muted'>Keine Zusammenfassung vorhanden.</p>")
 
@@ -309,7 +315,11 @@ def summary_reformat_status(request: HttpRequest, public_id: str) -> HttpRespons
         public_id=public_id,
         workspace__in=_tenant_workspace_qs(request),
     )
-    result = ResearchResult.objects.filter(project=research).order_by("-id").first()
+    result = (
+        ResearchResult.objects.filter(project=research, deleted_at__isnull=True)
+        .order_by("-id")
+        .first()
+    )
     cache_key = request.GET.get("key", "")
     # Key must belong to this (tenant-checked) research's result — no cache probing
     if not result or not cache_key.startswith(f"reformat:{result.pk}:"):
@@ -346,6 +356,9 @@ def workspace_delete(request: HttpRequest, public_id: str) -> HttpResponse:
     """Soft-delete a workspace including its projects and researches."""
     workspace = get_object_or_404(_tenant_workspace_qs(request), public_id=public_id)
     now = timezone.now()
+    ResearchResult.objects.filter(project__workspace=workspace, deleted_at__isnull=True).update(
+        deleted_at=now
+    )
     ResearchProject.objects.filter(workspace=workspace, deleted_at__isnull=True).update(
         deleted_at=now
     )
@@ -367,6 +380,9 @@ def project_delete(request: HttpRequest, project_id: str) -> HttpResponse:
         public_id=project_id,
     )
     now = timezone.now()
+    ResearchResult.objects.filter(project__project=project, deleted_at__isnull=True).update(
+        deleted_at=now
+    )
     ResearchProject.objects.filter(project=project, deleted_at__isnull=True).update(deleted_at=now)
     Project.objects.filter(pk=project.pk).update(deleted_at=now)
     messages.success(request, f"Projekt „{project.name}“ wurde gelöscht.")
@@ -384,7 +400,9 @@ def research_delete(request: HttpRequest, public_id: str) -> HttpResponse:
         ).select_related("project"),
         public_id=public_id,
     )
-    ResearchProject.objects.filter(pk=research.pk).update(deleted_at=timezone.now())
+    now = timezone.now()
+    ResearchResult.objects.filter(project=research, deleted_at__isnull=True).update(deleted_at=now)
+    ResearchProject.objects.filter(pk=research.pk).update(deleted_at=now)
     messages.success(request, f"Recherche „{research.name}“ wurde gelöscht.")
     if research.project:
         return redirect(research.project.get_absolute_url())

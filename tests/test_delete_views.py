@@ -3,7 +3,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.research.models import Project, ResearchProject, Workspace
+from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
 
 User = get_user_model()
 
@@ -103,3 +103,25 @@ def test_should_hide_deleted_workspace_from_list(user, workspace, client):
     response = client.get("/research/")
     # context check — the page HTML still contains the name in the success message
     assert workspace not in response.context["workspaces"]
+
+
+@pytest.mark.django_db
+def test_should_cascade_soft_delete_to_research_results(user, project, research, client):
+    """Deleting a research must also soft-delete its results (regression)."""
+    result = ResearchResult.objects.create(project=research, query="q", summary="s")
+    client.force_login(user)
+    client.post(f"/research/research/{research.public_id}/delete/")
+    result.refresh_from_db()
+    assert result.deleted_at is not None
+
+
+@pytest.mark.django_db
+def test_should_hide_deleted_result_from_api(user, project, research, client):
+    """A soft-deleted result must not stay readable via the API (data-leak regression)."""
+    result = ResearchResult.objects.create(project=research, query="q", summary="secret")
+    client.force_login(user)
+    # before deletion it is reachable
+    assert client.get(f"/api/v1/results/{result.public_id}/").status_code == 200
+    client.post(f"/research/research/{research.public_id}/delete/")
+    # after deletion the cascade hides it from the API
+    assert client.get(f"/api/v1/results/{result.public_id}/").status_code == 404

@@ -110,19 +110,16 @@
               <h6 class="text-muted text-uppercase small fw-semibold mb-3">
                 <i class="bi bi-journals me-2"></i>Akademische Quellen
               </h6>
-              <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="src_all"
-                  data-action="toggle-all">
-                <label class="form-check-label fw-semibold" for="src_all">Alle</label>
-              </div>
-              <hr class="my-2" style="border-color:#2d3148">
-              {% for value, label in form.academic_sources.field.choices %}
-              <div class="form-check mb-1">
-                <input class="form-check-input src-check" type="checkbox"
-                  name="academic_sources" id="src_{{ value }}" value="{{ value }}" checked>
-                <label class="form-check-label small" for="src_{{ value }}">{{ label }}</label>
-              </div>
-              {% endfor %}
+              <p class="small text-muted mb-2">
+                Bei Recherche-Typ „Wissenschaftlich“ oder „Kombiniert“ werden
+                folgende Quellen automatisch durchsucht:
+              </p>
+              <ul class="small text-muted mb-0 ps-3">
+                <li>arXiv</li>
+                <li>Semantic Scholar</li>
+                <li>PubMed</li>
+                <li>OpenAlex</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -228,19 +225,6 @@
   .type-card:hover { border-color: #6366f1; }
 </style>
 <script>
-function toggleAll(cb) {
-  document.querySelectorAll('.src-check').forEach(c => c.checked = cb.checked);
-}
-document.addEventListener('change', function(e) {
-    var el = e.target.closest('[data-action="toggle-all"]');
-    if (el) toggleAll(el);
-});
-document.querySelectorAll('.src-check').forEach(cb => {
-  cb.addEventListener('change', () => {
-    const all = [...document.querySelectorAll('.src-check')];
-    document.getElementById('src_all').checked = all.every(c => c.checked);
-  });
-});
 (function() {
   var radios = document.querySelectorAll('.summary-level-radio');
   var block = document.getElementById('citation-style-block');
