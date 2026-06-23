@@ -5,7 +5,7 @@
 > AI-Research-Plattform (Django + Celery + pgvector). Prod: https://research.iil.pet
 > Server `88.198.191.108`, Compose-Service `research-hub-web`, Port 8098.
 
-## Stand 2026-06-23 — synchronisiert, grün, keine offene Arbeit
+## Stand 2026-06-23 — synced, grün, bereit für neue Aufgaben
 
 **Aktueller Zustand:** `main` = `origin/main` (`1268482`), Working-Tree clean.
 Letzter Deploy grün (Run 28023059082, success). Keine offenen PRs/Issues.
@@ -17,6 +17,8 @@ Letzter Deploy grün (Run 28023059082, success). Keine offenen PRs/Issues.
 - `NEXT.md` aus stale (2026-06-12, zeigte auf #6) auf realen Stand gefrischt (PR #20).
 - Diese `AGENT_HANDOVER.md` angelegt, damit der Session-Start nicht mehr auf den
   git-log-Fallback zurückfällt.
+- Vier verwaiste `repo-session`-Worktrees abgeschlossener PRs (#7, #16–#18)
+  entfernt; nur noch der Haupt-Tree existiert.
 
 **Zuletzt gemergt (heute):**
 - #16 Tenant-Isolation & Daten-Integrität härten (#5–#9)
@@ -29,10 +31,8 @@ Letzter Deploy grün (Run 28023059082, success). Keine offenen PRs/Issues.
 > Aktuell **keine angefangene Arbeit** zum Fortsetzen — Repo ist bereit für neue Aufgaben.
 > Reihenfolge ist Vorschlag, kein verbindlicher Backlog.
 
-1. Bei neuer Arbeit: `/next` für tier-getaggte Vorschläge auf aktuellem Stand.
-2. Optional Aufräumen: verwaiste `repo-session`-Worktrees abgeschlossener PRs
-   (#16–#18) unter `~/.repo-session/worktrees/research-hub/` entfernen
-   (`git worktree remove …`).
+1. Kein offener Backlog — neues Thema/Issue definieren, dann passend routen.
+2. Optional auf frisch syncedem Stand: `/teste-repo` oder `/repo-health-check` fahren.
 
 ## Wo gestartet?
 
