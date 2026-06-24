@@ -1,0 +1,6 @@
+# Research Hub — Top-Level Requirements (Platform-Konvention / ADR-Template).
+# Laufzeit-/Produktions-Abhängigkeiten leben geschichtet unter requirements/.
+# Diese Datei ist der konventionelle Einstiegspunkt und delegiert an die Basis.
+#   - Dev/Test:  pip install -r requirements/dev.txt
+#   - Prod:      pip install -r requirements/prod.txt
+-r requirements/base.txt
