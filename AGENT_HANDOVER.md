@@ -5,18 +5,22 @@
 > AI-Research-Plattform (Django + Celery + pgvector). Prod: https://research.iil.pet
 > Server `88.198.191.108`, Compose-Service `research-hub-web`, Port 8098.
 
-## Stand 2026-06-24 (Session 2) — org-weiter Issue-Scan + promptfw PR #14 gepatcht
+## Stand 2026-06-24 (Session 3) — Retro + Cross-Repo-Aufräumen abgeschlossen
 
-**Aktueller Zustand:** `main` = `origin/main` (`31f1cec`), Working-Tree clean.
+**Aktueller Zustand:** `main` = `origin/main` (`f63b325`), Working-Tree clean.
 Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
 **Ein offenes Issue: #26** (Infra-Drift) — bewusst für platform-Session geparkt (s. Prioritäten).
 
+**Session 3 (2026-06-24) — Retro + Cross-Repo-Aufräumen:**
+- **Session-Retro** abgeschlossen: `~/shared/session-retro-2026-06-24-research-hub-46c50c.md` (4 Survivors, 4 REFUTED).
+- **3 Zombie-Issues geschlossen:** `recruiting-hub #1`, `researchfw #1`, `weltenfw #2` (Fix war bereits gemergt, kein `Closes #n` in PRs).
+- **weltenhub #11:** STOP-Kommentar hinterlassen (pre-existing CI-Failures, PR #12).
+- **writing-hub gescannt:** 4 Issues, alle STOP (Cross-Repo/Migration/ADR/Epic) — kein DO-NOW.
+- **promptfw PR #14 + Issue #11 geschlossen:** main war seit 2026-06-22 grün (PRs #15/#16 hatten Lint bereits gefixt), PR hatte unlösbare Merge-Konflikte.
+
 **Session 2 (2026-06-24) — /issues-offen org:achimdehnert (6 Läufe, 48/49 Repos):**
-- Org-weiter Issue-Scan (achimdehnert, 49 Repos): **0 DO-NOW** auf main — keine ai-assignable/automated-Issues gate-frei.
-- **promptfw PR #14** erweitert: `fix/11-lint-gate` Commit `7dc1829` — ci.yml 3.11→3.12, django zu [dev]-Extras. CI-Run noch ausstehend (kein neuer Run seit Push).
-- **3 stale Issues** identifiziert (Fix bereits gemergt, Issue noch offen): `recruiting-hub #1`, `researchfw #1`, `weltenfw #2` → manuell schließen.
+- Org-weiter Issue-Scan (achimdehnert, 49 Repos): **0 DO-NOW** auf main.
 - **weltenhub PR #12** (noqa-fix): Lint ✅, Tests rot pre-existing (platform-context + django_tenancy).
-- `writing-hub` (Repo 49) noch nicht gescannt.
 
 **Session 1 — diese Session erledigt:**
 - `/teste-repo` gefahren: 102 „Fehler" als reine Infrastruktur entlarvt (fehlendes
@@ -51,14 +55,13 @@ Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
 
 ## Prioritäten
 
-> research-hub selbst hat keinen offenen Code-Backlog. Cross-Repo-Follow-ups aus Session 2 unten.
+> research-hub selbst hat keinen offenen Code-Backlog. Cross-Repo-Follow-ups alle erledigt (Session 3).
 
 1. **#26 (Infra-Drift) NICHT in research-hub fixen** — platform-Scope (shared-ci-tag-stale). Platform-Governance-Session (`/ci-green-program`). Hier nur beobachten.
-2. **Cross-Repo Follow-ups (Folge-Session):**
-   - promptfw CI prüfen: `gh run list --repo achimdehnert/promptfw --branch fix/11-lint-gate --limit 3`
-   - Stale Issues schließen: `gh issue close 1 --repo achimdehnert/recruiting-hub && gh issue close 1 --repo achimdehnert/researchfw && gh issue close 2 --repo achimdehnert/weltenfw`
-   - `writing-hub` scannen: `/issues-offen writing-hub`
+2. **weltenhub PR #12** — Lint ✅, Tests rot pre-existing (platform-context + django_tenancy). STOP-Kommentar auf Issue #11 gesetzt. Aufgreifen wenn platform-ci-Paket verfügbar.
 3. Optional: `/teste-repo` (lokal via `docker-compose.test.yml`).
+
+> **Erledigt Session 3 (2026-06-24):** Zombie-Issues geschlossen (recruiting-hub/researchfw/weltenfw), weltenhub #11 kommentiert, writing-hub gescannt (alle STOP), promptfw PR #14 + Issue #11 geschlossen.
 
 ## Wo gestartet?
 
