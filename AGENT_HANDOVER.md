@@ -44,8 +44,10 @@ git fetch origin && git status -sb        # main = origin/main? clean?
 docker compose -f docker/docker-compose.yml up -d
 curl http://127.0.0.1:8098/healthz/        # Health-Probe
 
-# Tests (kein Makefile in diesem Repo — pytest mit Test-Settings)
+# Tests (kein Makefile — Test-Postgres via Compose, dann pytest mit Test-Settings)
+docker compose -f docker/docker-compose.test.yml up -d   # pgvector auf 127.0.0.1:5439
 DJANGO_SETTINGS_MODULE=config.settings.test pytest
+docker compose -f docker/docker-compose.test.yml down     # aufräumen
 
 gh pr list && gh issue list                # offene Arbeit prüfen
 ```
