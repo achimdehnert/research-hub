@@ -43,8 +43,8 @@ RUN groupadd --gid 1000 app \
 USER app:1000
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=30s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/livez/')"
+# ADR-078: Healthcheck gehört pro-Service in docker-compose.prod.yml, nicht ins
+# image-globale Dockerfile. Der research-hub-web-Service dort prüft /healthz/.
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
