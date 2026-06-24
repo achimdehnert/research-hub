@@ -1,0 +1,29 @@
+# Local test database for research-hub (ADR-179: PostgreSQL-Only Testing).
+#
+# Bedient die Standalone-Defaults aus config/settings/test.py
+# (HOST 127.0.0.1, PORT 5439, USER/PASSWORD research_hub). Damit ist
+# `/teste-repo` ohne weitere Env reproduzierbar:
+#
+#   docker compose -f docker/docker-compose.test.yml up -d
+#   DJANGO_SETTINGS_MODULE=config.settings.test pytest
+#   docker compose -f docker/docker-compose.test.yml down
+#
+# pgvector statt postgres:16, da base.py pgvector-Spalten nutzen kann; der
+# Host-Port 5439 ist bewusst abseits belegter Dev-DBs (5432–5437) gewählt.
+services:
+  test-db:
+    image: pgvector/pgvector:pg16
+    container_name: research_hub_test_db
+    environment:
+      POSTGRES_DB: research_hub_test
+      POSTGRES_USER: research_hub
+      POSTGRES_PASSWORD: research_hub
+    ports:
+      - "127.0.0.1:5439:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U research_hub -d research_hub_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
