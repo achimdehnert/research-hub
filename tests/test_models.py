@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-def test_research_project_create(db):
+def test_should_create_research_project(db):
     user = User.objects.create_user(username="testuser", password="pass", email="test@iil.pet")
     project = ResearchProject.objects.create(
         user=user, name="Test Project", query="machine learning"

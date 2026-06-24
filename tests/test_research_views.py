@@ -50,14 +50,14 @@ def result_with_summary(research):
 
 
 @pytest.mark.django_db
-def test_reformat_htmx_requires_post(user, research, client):
+def test_should_reject_reformat_get_request(user, research, client):
     client.force_login(user)
     response = client.get(f"/research/research/{research.public_id}/reformat/")
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-def test_reformat_htmx_requires_htmx_header(user, research, client):
+def test_should_reject_reformat_without_htmx_header(user, research, client):
     client.force_login(user)
     response = client.post(
         f"/research/research/{research.public_id}/reformat/",
@@ -67,7 +67,7 @@ def test_reformat_htmx_requires_htmx_header(user, research, client):
 
 
 @pytest.mark.django_db
-def test_reformat_htmx_no_summary(user, research, client):
+def test_should_show_notice_when_no_summary(user, research, client):
     client.force_login(user)
     response = client.post(
         f"/research/research/{research.public_id}/reformat/",
@@ -78,8 +78,9 @@ def test_reformat_htmx_no_summary(user, research, client):
     assert "Keine Zusammenfassung" in response.content.decode()
 
 
+@pytest.mark.a6
 @pytest.mark.django_db
-def test_reformat_htmx_invalid_format_rejected(user, research, result_with_summary, client):
+def test_should_reject_invalid_target_format(user, research, result_with_summary, client):
     client.force_login(user)
     response = client.post(
         f"/research/research/{research.public_id}/reformat/",
@@ -89,8 +90,9 @@ def test_reformat_htmx_invalid_format_rejected(user, research, result_with_summa
     assert response.status_code == 400
 
 
+@pytest.mark.u3
 @pytest.mark.django_db
-def test_reformat_htmx_returns_polling_partial(user, research, result_with_summary, client):
+def test_should_return_polling_partial_on_post(user, research, result_with_summary, client):
     """POST dispatches the Celery task and returns the polling partial."""
     client.force_login(user)
     with patch("apps.research.tasks._make_sync_aifw_llm") as mock_factory:
@@ -107,7 +109,7 @@ def test_reformat_htmx_returns_polling_partial(user, research, result_with_summa
 
 
 @pytest.mark.django_db
-def test_reformat_status_returns_result_after_task(user, research, result_with_summary, client):
+def test_should_return_result_after_task_completes(user, research, result_with_summary, client):
     """Eager Celery runs the task inline — the status poll returns the summary."""
     client.force_login(user)
     with patch("apps.research.tasks._make_sync_aifw_llm") as mock_factory:
@@ -130,7 +132,7 @@ def test_reformat_status_returns_result_after_task(user, research, result_with_s
 
 
 @pytest.mark.django_db
-def test_reformat_status_rejects_foreign_key_param(user, research, result_with_summary, client):
+def test_should_reject_foreign_cache_key(user, research, result_with_summary, client):
     """Cache keys not belonging to this research's result are rejected."""
     client.force_login(user)
     response = client.get(
