@@ -7,8 +7,9 @@
 
 ## Stand 2026-06-24 — synced, grün, Test-Setup repariert + Warnungen weg
 
-**Aktueller Zustand:** `main` = `origin/main` (`724b746`), Working-Tree clean.
-Keine offenen PRs/Issues. Remote enthält nur noch `main` (alle stale Branches gelöscht).
+**Aktueller Zustand:** `main` = `origin/main` (`6448548`), Working-Tree clean.
+Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
+**Ein offenes Issue: #26** (Infra-Drift) — bewusst für platform-Session geparkt (s. Prioritäten).
 
 **Diese Session erledigt:**
 - `/teste-repo` gefahren: 102 „Fehler" als reine Infrastruktur entlarvt (fehlendes
@@ -25,18 +26,34 @@ Keine offenen PRs/Issues. Remote enthält nur noch `main` (alle stale Branches g
   umbenannt (ADR-057).
 - Branch-Cleanup: 5 gemergte stale Remote-Branches gelöscht (PRs #11/#15/#20/#21/#22,
   je gegen PR-Merge-Status geprüft — nicht `git cherry`, wg. Squash-Divergenz).
+- **Issue #26** (Infra-Drift, 4 pre-existing Errors aus `drift_check.py`): 2 von 4
+  behoben — **PR #27** (`requirements.txt` Top-Level angelegt; `HEALTHCHECK` aus
+  Dockerfile entfernt, ADR-078, Compose prüft `/healthz/` bereits) + **PR #28**
+  (`_ci-python`-Pin v1.0.6 → v1.0.8, Tag-Alignment, Warn weg). Drift-Recheck: 4→2 Errors.
+- Root-Cause der 2 verbleibenden `shared-ci-tag-stale`-Errors geklärt: **kein
+  research-hub-Fix** — `platform/main` hinkt shared-ci `v1.0.8` hinterher
+  (`migrations_smoke` / `ghcr_push_token` fehlen im platform-Mirror). Gehört in
+  eine platform-Governance-Session; #26 dafür offen gelassen.
 
 **Zuletzt gemergt (heute, 2026-06-24):**
 - #23 fix(test): erreichbare DB-Defaults + `docker-compose.test.yml`
 - #24 chore(test): ADR-057-Naming + ADR-058-Taxonomy-Warnungen auflösen
+- #25 docs: AGENT_HANDOVER auf Stand 2026-06-24
+- #27 fix(infra): requirements.txt + Dockerfile-HEALTHCHECK entfernt (#26)
+- #28 chore(ci): _ci-python Pin v1.0.6 → v1.0.8 (#26)
 
 ## Prioritäten
 
-> Aktuell **keine angefangene Arbeit** zum Fortsetzen — Repo ist bereit für neue Aufgaben.
-> Reihenfolge ist Vorschlag, kein verbindlicher Backlog.
+> Keine angefangene research-hub-Arbeit zum Fortsetzen. Ein Issue ist offen,
+> aber bewusst **platform-Scope** (nicht hier lösbar). Reihenfolge = Vorschlag.
 
-1. Kein offener Backlog — neues Thema/Issue definieren, dann passend routen.
-2. Optional auf frisch syncedem Stand: `/teste-repo` oder `/repo-health-check` fahren.
+1. **#26 (Infra-Drift) NICHT in research-hub fixen** — die 2 verbleibenden
+   `shared-ci-tag-stale`-Errors sind ein platform↔shared-ci-Mirror-Thema
+   (`platform/main` hinkt shared-ci `v1.0.8` hinterher). Gehört in eine
+   platform-Governance-Session (`/ci-green-program`), nicht in einen
+   research-hub-Edit. Hier nur beobachten.
+2. Sonst kein offener Backlog — neues Thema/Issue definieren, dann passend routen.
+3. Optional: `/teste-repo` (jetzt lokal reproduzierbar via `docker-compose.test.yml`).
 
 ## Wo gestartet?
 
