@@ -17,6 +17,17 @@ known-first-party = ["apps", "config"]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
+# ADR-058: Django web app — not the iil-testkit default repo-type "mcp".
+# Pflicht-Marker für "django": f1, f3, a2, a6, u3.
+iil_repo_type = "django"
+# ADR-058 Test-Taxonomy Marker (registriert → keine PytestUnknownMarkWarning).
+markers = [
+    "f1: Unit Test — eine Funktion/Methode, ein Ergebnis",
+    "f3: Exception Test — korrekter Exception-Typ + Message",
+    "a2: Auth Test — unauthentifiziert → 401/403, kein Datenleck",
+    "a6: Error Handling Test — 4xx/5xx ohne Traceback",
+    "u3: HTMX Fragment Test — HX-Request → nur Fragment",
+]
 
 [tool.coverage.run]
 branch = true

@@ -29,6 +29,7 @@ def workspace(user):
     return ws
 
 
+@pytest.mark.a2
 @pytest.mark.django_db
 def test_should_require_auth_for_api(client):
     response = client.get("/api/v1/workspaces/")

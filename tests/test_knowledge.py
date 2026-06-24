@@ -138,6 +138,7 @@ class TestSyncService(TestCase):
         doc = sync_document_from_outline(payload)
         assert doc.category == KnowledgeCategory.LESSON
 
+    @pytest.mark.f3
     def test_should_raise_on_missing_id(self):
         with pytest.raises(ValueError, match="Missing document id"):
             sync_document_from_outline({"data": {}})

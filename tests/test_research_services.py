@@ -13,6 +13,7 @@ from apps.research.services import ResearchProjectService, _tenant_int
 User = get_user_model()
 
 
+@pytest.mark.f1
 def test_should_map_tenant_uuid_to_stable_signed_bigint():
     u = uuid.UUID("12345678-1234-5678-1234-567812345678")
     val = _tenant_int(u)
@@ -29,7 +30,7 @@ def test_should_not_collide_on_uuids_sharing_first_32_bits():
 
 
 @pytest.mark.django_db
-def test_create_project(db):
+def test_should_create_project(db):
     user = User.objects.create_user(username="svc_user", password="pass", email="svc@iil.pet")
     svc = ResearchProjectService()
     project = svc.create_project(user=user, name="Test", query="AI research")
@@ -39,7 +40,7 @@ def test_create_project(db):
 
 
 @pytest.mark.django_db
-def test_create_project_with_description(db):
+def test_should_create_project_with_description(db):
     user = User.objects.create_user(username="svc_user2", password="pass", email="svc2@iil.pet")
     svc = ResearchProjectService()
     project = svc.create_project(user=user, name="P2", query="query", description="desc")
@@ -47,7 +48,7 @@ def test_create_project_with_description(db):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_run_research_success():
+def test_should_complete_research_on_success():
     user = User.objects.create_user(username="async_user", password="pass", email="async@iil.pet")
     project = ResearchProject.objects.create(user=user, name="Async Project", query="test query")
     mock_output = MagicMock()
@@ -92,7 +93,7 @@ def test_should_not_duplicate_result_on_retried_run():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_run_research_failure():
+def test_should_set_error_status_on_failure():
     user = User.objects.create_user(username="fail_user", password="pass", email="fail@iil.pet")
     project = ResearchProject.objects.create(user=user, name="Fail Project", query="test")
 
