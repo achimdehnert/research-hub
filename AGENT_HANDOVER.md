@@ -5,26 +5,30 @@
 > AI-Research-Plattform (Django + Celery + pgvector). Prod: https://research.iil.pet
 > Server `88.198.191.108`, Compose-Service `research-hub-web`, Port 8098.
 
-## Stand 2026-06-23 — synced, grün, bereit für neue Aufgaben
+## Stand 2026-06-24 — synced, grün, Test-Setup repariert + Warnungen weg
 
-**Aktueller Zustand:** `main` = `origin/main` (`1268482`), Working-Tree clean.
-Letzter Deploy grün (Run 28023059082, success). Keine offenen PRs/Issues.
+**Aktueller Zustand:** `main` = `origin/main` (`724b746`), Working-Tree clean.
+Keine offenen PRs/Issues. Remote enthält nur noch `main` (alle stale Branches gelöscht).
 
 **Diese Session erledigt:**
-- Lokalen `main` mit `origin/main` synchronisiert — war 192 voraus / 302 hinterher,
-  alle 192 Lokal-Commits waren als squash-PRs auf origin dupliziert (`git cherry`
-  verifiziert), daher `reset --hard origin/main` ohne Verlust.
-- `NEXT.md` aus stale (2026-06-12, zeigte auf #6) auf realen Stand gefrischt (PR #20).
-- Diese `AGENT_HANDOVER.md` angelegt, damit der Session-Start nicht mehr auf den
-  git-log-Fallback zurückfällt.
-- Vier verwaiste `repo-session`-Worktrees abgeschlossener PRs (#7, #16–#18)
-  entfernt; nur noch der Haupt-Tree existiert.
+- `/teste-repo` gefahren: 102 „Fehler" als reine Infrastruktur entlarvt (fehlendes
+  Postgres + Port-5434-Kollision mit `writing_hub_db_dev`), kein Code-Defekt.
+  Beweis: pytest gegen CI-konformes Postgres → **104 passed**.
+- **PR #23** — Test-DB-Defaults repariert: Standalone-Defaults von Unix-Socket +
+  User `dehnert` (nur Lead-Dev-Maschine) auf erreichbares TCP `127.0.0.1:5439`
+  umgestellt + `docker/docker-compose.test.yml` (pgvector) ergänzt, das genau
+  diese Defaults bedient. shared-CI-Pfad (`POSTGRES_HOST`) mustergleich zu
+  writing-hub. `ci.yml` unverändert (pinnt `TEST_DB_*` explizit).
+- **PR #24** — iil-testkit-Warnungen aufgeräumt: `iil_repo_type = "django"`
+  (ADR-058) + Marker `f1/f3/a2/a6/u3` registriert und semantisch an je einen
+  Test gehängt → „ADR-058 Compliance PASSED"; 12 Tests auf `test_should_*`
+  umbenannt (ADR-057).
+- Branch-Cleanup: 5 gemergte stale Remote-Branches gelöscht (PRs #11/#15/#20/#21/#22,
+  je gegen PR-Merge-Status geprüft — nicht `git cherry`, wg. Squash-Divergenz).
 
-**Zuletzt gemergt (heute):**
-- #16 Tenant-Isolation & Daten-Integrität härten (#5–#9)
-- #17 Cross-Org-IDOR-Guard (Tenant-Membership-Middleware + Test)
-- #18 `docker/secrets/*` aus Git-Tracking genommen (ADR-045)
-- #19 shared-ci `_deploy-unified` v1.0.6 → v1.0.8 (GHCR_TOKEN-Durchreichung)
+**Zuletzt gemergt (heute, 2026-06-24):**
+- #23 fix(test): erreichbare DB-Defaults + `docker-compose.test.yml`
+- #24 chore(test): ADR-057-Naming + ADR-058-Taxonomy-Warnungen auflösen
 
 ## Prioritäten
 
