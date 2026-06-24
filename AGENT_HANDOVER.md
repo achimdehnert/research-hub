@@ -5,13 +5,20 @@
 > AI-Research-Plattform (Django + Celery + pgvector). Prod: https://research.iil.pet
 > Server `88.198.191.108`, Compose-Service `research-hub-web`, Port 8098.
 
-## Stand 2026-06-24 — synced, grün, Test-Setup repariert + Warnungen weg
+## Stand 2026-06-24 (Session 2) — org-weiter Issue-Scan + promptfw PR #14 gepatcht
 
-**Aktueller Zustand:** `main` = `origin/main` (`6448548`), Working-Tree clean.
+**Aktueller Zustand:** `main` = `origin/main` (`31f1cec`), Working-Tree clean.
 Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
 **Ein offenes Issue: #26** (Infra-Drift) — bewusst für platform-Session geparkt (s. Prioritäten).
 
-**Diese Session erledigt:**
+**Session 2 (2026-06-24) — /issues-offen org:achimdehnert (6 Läufe, 48/49 Repos):**
+- Org-weiter Issue-Scan (achimdehnert, 49 Repos): **0 DO-NOW** auf main — keine ai-assignable/automated-Issues gate-frei.
+- **promptfw PR #14** erweitert: `fix/11-lint-gate` Commit `7dc1829` — ci.yml 3.11→3.12, django zu [dev]-Extras. CI-Run noch ausstehend (kein neuer Run seit Push).
+- **3 stale Issues** identifiziert (Fix bereits gemergt, Issue noch offen): `recruiting-hub #1`, `researchfw #1`, `weltenfw #2` → manuell schließen.
+- **weltenhub PR #12** (noqa-fix): Lint ✅, Tests rot pre-existing (platform-context + django_tenancy).
+- `writing-hub` (Repo 49) noch nicht gescannt.
+
+**Session 1 — diese Session erledigt:**
 - `/teste-repo` gefahren: 102 „Fehler" als reine Infrastruktur entlarvt (fehlendes
   Postgres + Port-5434-Kollision mit `writing_hub_db_dev`), kein Code-Defekt.
   Beweis: pytest gegen CI-konformes Postgres → **104 passed**.
@@ -44,16 +51,14 @@ Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
 
 ## Prioritäten
 
-> Keine angefangene research-hub-Arbeit zum Fortsetzen. Ein Issue ist offen,
-> aber bewusst **platform-Scope** (nicht hier lösbar). Reihenfolge = Vorschlag.
+> research-hub selbst hat keinen offenen Code-Backlog. Cross-Repo-Follow-ups aus Session 2 unten.
 
-1. **#26 (Infra-Drift) NICHT in research-hub fixen** — die 2 verbleibenden
-   `shared-ci-tag-stale`-Errors sind ein platform↔shared-ci-Mirror-Thema
-   (`platform/main` hinkt shared-ci `v1.0.8` hinterher). Gehört in eine
-   platform-Governance-Session (`/ci-green-program`), nicht in einen
-   research-hub-Edit. Hier nur beobachten.
-2. Sonst kein offener Backlog — neues Thema/Issue definieren, dann passend routen.
-3. Optional: `/teste-repo` (jetzt lokal reproduzierbar via `docker-compose.test.yml`).
+1. **#26 (Infra-Drift) NICHT in research-hub fixen** — platform-Scope (shared-ci-tag-stale). Platform-Governance-Session (`/ci-green-program`). Hier nur beobachten.
+2. **Cross-Repo Follow-ups (Folge-Session):**
+   - promptfw CI prüfen: `gh run list --repo achimdehnert/promptfw --branch fix/11-lint-gate --limit 3`
+   - Stale Issues schließen: `gh issue close 1 --repo achimdehnert/recruiting-hub && gh issue close 1 --repo achimdehnert/researchfw && gh issue close 2 --repo achimdehnert/weltenfw`
+   - `writing-hub` scannen: `/issues-offen writing-hub`
+3. Optional: `/teste-repo` (lokal via `docker-compose.test.yml`).
 
 ## Wo gestartet?
 
