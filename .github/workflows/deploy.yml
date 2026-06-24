@@ -29,7 +29,7 @@ on:
 
 jobs:
   ci:
-    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.0.6
+    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.0.8
     if: startsWith(github.ref, 'refs/heads/')
     with:
       skip_tests: true
