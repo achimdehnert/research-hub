@@ -9,6 +9,36 @@ from django.db import models
 from django.urls import reverse
 
 
+class SoftDeleteQuerySet(models.QuerySet):
+    """QuerySet with explicit alive/dead helpers for soft-deleted rows."""
+
+    def alive(self) -> SoftDeleteQuerySet:
+        return self.filter(deleted_at__isnull=True)
+
+    def dead(self) -> SoftDeleteQuerySet:
+        return self.filter(deleted_at__isnull=False)
+
+
+class SoftDeleteManager(models.Manager.from_queryset(SoftDeleteQuerySet)):
+    """Default manager that hides soft-deleted rows (``deleted_at`` set).
+
+    This makes the safe path the default: callers no longer have to remember
+    ``.filter(deleted_at__isnull=True)`` on every query (a forgotten filter
+    used to leak deleted rows). Reach every row — including soft-deleted —
+    via ``all_objects`` (admin, cascades, historical metrics, restore).
+    Forward-FK access (e.g. ``result.project`` for a soft-deleted project)
+    stays unfiltered because ``Meta.base_manager_name = "all_objects"``.
+    """
+
+    def get_queryset(self) -> SoftDeleteQuerySet:
+        return super().get_queryset().alive()
+
+
+# Unfiltered manager (sees soft-deleted rows) that still exposes the
+# alive()/dead() helpers — e.g. ``Model.all_objects.dead()`` for restore/audit.
+AllObjectsManager = models.Manager.from_queryset(SoftDeleteQuerySet)
+
+
 class Workspace(models.Model):
     """Top-level container: one Workspace holds multiple Projects.
 
@@ -35,8 +65,12 @@ class Workspace(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
     class Meta:
         ordering = ["-created_at"]
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(fields=["user", "name"], name="unique_user_workspace_name"),
         ]
@@ -74,8 +108,12 @@ class Project(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
     class Meta:
         ordering = ["-created_at"]
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["workspace", "name"], name="unique_workspace_project_name"
@@ -179,8 +217,12 @@ class ResearchProject(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
     class Meta:
         ordering = ["-created_at"]
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(fields=["user", "name"], name="unique_user_project_name"),
         ]
@@ -218,8 +260,12 @@ class ResearchResult(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
     class Meta:
         ordering = ["-created_at"]
+        base_manager_name = "all_objects"
 
     def __str__(self) -> str:
         return f"{self.project.name} — {self.created_at:%Y-%m-%d}"
