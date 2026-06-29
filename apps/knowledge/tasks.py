@@ -96,37 +96,28 @@ def enrich_knowledge_document_task(self, doc_pk: int) -> str:
     # Truncate text for prompt (max ~6000 chars)
     text = doc.text[:6000]
 
-    # 1. Try DB-backed prompt (ADR-146)
+    # Prompt resolution (ADR-146): DB first, else the canonical seed YAML.
+    # No hand-maintained inline copy — see config.prompt_fallback.
+    prompt_context = dict(
+        title=doc.title,
+        category=doc.get_category_display(),
+        text=text,
+    )
     messages = None
     try:
         from promptfw.contrib.django import render_prompt as db_render_prompt
 
-        messages = db_render_prompt(
-            "research-hub.knowledge.enrich",
-            title=doc.title,
-            category=doc.get_category_display(),
-            text=text,
-        )
+        messages = db_render_prompt("research-hub.knowledge.enrich", **prompt_context)
     except Exception:
-        pass  # fall through to inline
+        pass  # fall through to YAML fallback
 
-    # 2. Inline fallback (legacy)
     if not messages:
-        prompt = f"""Analysiere das folgende technische Dokument und erstelle:
+        from config.prompt_fallback import render_seed_messages
 
-1. Eine prägnante deutsche Zusammenfassung (2-4 Sätze)
-2. Eine Liste von 3-8 Keywords (englisch, lowercase)
-
-Dokument-Titel: {doc.title}
-Kategorie: {doc.get_category_display()}
-
----
-{text}
----
-
-Antworte EXAKT in diesem JSON-Format:
-{{"summary": "...", "keywords": ["keyword1", "keyword2", ...]}}"""
-        messages = [{"role": "user", "content": prompt}]
+        messages = render_seed_messages("research-hub.knowledge.enrich", **prompt_context)
+    if not messages:
+        mark_enrichment_failed(doc, "No prompt template available")
+        return f"no prompt: {doc.title}"
 
     try:
         result = aifw.sync_completion(
