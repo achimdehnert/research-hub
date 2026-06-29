@@ -73,6 +73,5 @@ docker compose -f docker/docker-compose.test.yml down
 
 ## Bekannte Stolperfallen für Agenten
 
-- `env_loader.py` ist ein **Symlink in `~/.secrets/`** (maschinenlokal, in CI/Clone evtl. tot). Nicht als Modul-Vorlage missbrauchen; aus Ruff bewusst exkludiert.
 - `.windsurf/` (Rules + Workflows) ist **`.gitignore`'d + symlinked** → in einem frischen Clone nicht vorhanden. Diese `CLAUDE.md` ist die getrackte SSoT.
-- Es existieren zwei `Dockerfile` (root + `docker/Dockerfile`, divergierend). Compose-Build referenziert `docker/Dockerfile`.
+- **Zwei `Dockerfile` mit klaren Rollen** (Banner am Dateikopf): **root `./Dockerfile` = kanonisch Prod/CI** (shared-ci `_deploy-unified`, braucht `PROJECT_PAT`-BuildKit-Secret); **`docker/Dockerfile` = nur lokaler Dev-Stack** (`docker/docker-compose.yml`). Beim Anpassen die richtige erwischen.

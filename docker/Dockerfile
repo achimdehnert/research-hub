@@ -1,3 +1,6 @@
+# NUR LOKALER DEV-STACK. Gebaut von docker/docker-compose.yml.
+# NICHT in Prod/CI verwendet — dort baut shared-ci die root-./Dockerfile.
+# Bewusst simpler: kein PROJECT_PAT-Secret, settings.base, eigener HEALTHCHECK.
 FROM python:3.12-slim
 
 WORKDIR /app
