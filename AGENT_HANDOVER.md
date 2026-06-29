@@ -5,6 +5,21 @@
 > AI-Research-Plattform (Django + Celery + pgvector). Prod: https://research.iil.pet
 > Server `88.198.191.108`, Compose-Service `research-hub-web`, Port 8098.
 
+## Stand 2026-06-29 (Session 4) — Onboarding-SSoT + research-App-Architektur-Refactors (5 PRs, alle live)
+
+**Aktueller Zustand:** `main` = `origin/main` (`5a112ee`), Working-Tree clean, keine offenen Worktrees.
+**Prod aktuell & grün:** Deploy-Run 28407848157 (sha `5a112ee`) success; `https://research.iil.pet/healthz/` → HTTP 200. Migration `0010` (SoftDelete, rein State) live.
+
+**Diese Session — 5 PRs gemergt:**
+- **#33** docs: `CLAUDE.md` als alleinige SSoT (Port 8098, Health-Semantik `/livez`=liveness, `/healthz`=readiness, Apps-Map, Run/Test, Branch-Guard); stale `docs/AGENT_HANDOVER.md` (gelöster 502-Incident als „offen") gelöscht; `catalog-info.yaml` Incident-Doppel-Imagename korrigiert.
+- **platform #721** fix(registry): research-hub-Port 8104→8098 in 4 Registries (Generator-Quelle `scripts/repo-registry.yaml` u.a.). Ground Truth: `nginx.conf` proxy_pass 8098 + `docker-compose.prod.yml:70`. Danach `gen-project-facts` → `project-facts.md` = 8098.
+- **#34** chore: toten `env_loader.py`-Symlink entfernt; zwei `Dockerfile` mit Rollen-Banner (root `./Dockerfile`=kanonisch Prod/CI via shared-ci, `docker/Dockerfile`=nur Dev-Stack).
+- **#35** refactor(A1+A2): `SoftDeleteManager` als Default-Manager (`objects`=alive-only, `all_objects`+`alive()/dead()`, `Meta.base_manager_name='all_objects'`); Lösch-Kaskade zentral in `apps/research/soft_delete.py` (3× Duplikat in Delete-Views weg).
+- **#36** refactor(A4): Prompt-Fallback aus kanonischer `prompts/research-hub-seed.yaml` via `config/prompt_fallback.py` statt hand-divergenter Inline-f-Strings; beide Call-Sites (`research/services._deep_analyze` + `knowledge/tasks`).
+
+**Verifikation:** volle Test-Suite **115 passed** (lokal gegen Test-Postgres); jede PR-CI grün; Prod-Health 200.
+**Hinweis:** orchestrator-pgvector-Memory war headless nicht erreichbar (HTTP 404) → Session-Summary nur datei-basiert (`~/.claude/.../memory/promptfw-seed-not-applied.md`) + hier.
+
 ## Stand 2026-06-24 (Session 3) — Retro + Cross-Repo-Aufräumen abgeschlossen
 
 **Aktueller Zustand:** `main` = `origin/main` (`f63b325`), Working-Tree clean.
@@ -55,13 +70,19 @@ Letzter Deploy grün (Run 28093087390, sha 6448548). Remote nur noch `main`.
 
 ## Prioritäten
 
-> research-hub selbst hat keinen offenen Code-Backlog. Cross-Repo-Follow-ups alle erledigt (Session 3).
+> Neuer **Architektur-Backlog** aus der `research`-App-Analyse (2026-06-29). Optionale, gate-freie Folge-PRs — kein Pflicht-Strang.
 
-1. **#26 (Infra-Drift) NICHT in research-hub fixen** — platform-Scope (shared-ci-tag-stale). Platform-Governance-Session (`/ci-green-program`). Hier nur beobachten.
-2. **weltenhub PR #12** — Lint ✅, Tests rot pre-existing (platform-context + django_tenancy). STOP-Kommentar auf Issue #11 gesetzt. Aufgreifen wenn platform-ci-Paket verfügbar.
+1. **research-App Architektur-Findings** (Analyse 2026-06-29, je 1 PR):
+   - **A3** Status-State-Machine — Übergänge `draft→running→analysing→done/error` kapseln (heute verstreut über `tasks.py` + `services.py`, Race-Risiko bei Retry).
+   - **A5** totes `academic_sources`-Feld + `ACADEMIC_SOURCE_CHOICES` deprecaten (iil_researchfw ignoriert es; im `forms.py`-NOTE dokumentiert).
+   - **A6** Middleware-Order-Assert — Tenant-Isolation hängt implizit an `AuthenticationMiddleware` VOR `ResearchHubTenantMiddleware` (heute korrekt, `base.py:80<85`; Reorder bricht Isolation still).
+   - **A7** `views_metrics.py` (397 LOC) in `metrics/`-Subpackage splitten (Auth/Collectors/Exporter).
+   - **NEU** promptfw-DB-Seeding im `entrypoint` (`seed_prompts` aus der YAML) — aktuell wird nichts geseedet, der YAML-Fallback ist der aktive Prod-Pfad (Memory `promptfw-seed-not-applied`).
+2. **#26 (Infra-Drift) NICHT in research-hub fixen** — platform-Scope (shared-ci-tag-stale), `/ci-green-program`. Nur beobachten.
 3. Optional: `/teste-repo` (lokal via `docker-compose.test.yml`).
 
-> **Erledigt Session 3 (2026-06-24):** Zombie-Issues geschlossen (recruiting-hub/researchfw/weltenfw), weltenhub #11 kommentiert, writing-hub gescannt (alle STOP), promptfw PR #14 + Issue #11 geschlossen.
+> **Erledigt Session 4 (2026-06-29):** Onboarding-SSoT-Konsolidierung (#33/#721/#34) + research-App-Refactors A1/A2/A4 (#35/#36). research-App-Architektur analysiert; A3/A5/A6/A7 + promptfw-Seeding als Backlog oben.
+> **Erledigt Session 3 (2026-06-24):** Zombie-Issues geschlossen (recruiting-hub/researchfw/weltenfw), weltenhub #11 kommentiert (PR #12 geparkt bis platform-ci-Paket), writing-hub gescannt (alle STOP), promptfw PR #14 + Issue #11 geschlossen.
 
 ## Wo gestartet?
 
