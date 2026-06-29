@@ -12,12 +12,16 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.research.forms import ProjectForm, ResearchProjectForm, WorkspaceForm
 from apps.research.models import Project, ResearchProject, ResearchResult, Workspace
+from apps.research.soft_delete import (
+    soft_delete_project,
+    soft_delete_research,
+    soft_delete_workspace as soft_delete_workspace_cascade,
+)
 from apps.research.tasks import (
     REFORMAT_CACHE_TTL,
     reformat_summary_task,
@@ -355,15 +359,7 @@ def summary_reformat_status(request: HttpRequest, public_id: str) -> HttpRespons
 def workspace_delete(request: HttpRequest, public_id: str) -> HttpResponse:
     """Soft-delete a workspace including its projects and researches."""
     workspace = get_object_or_404(_tenant_workspace_qs(request), public_id=public_id)
-    now = timezone.now()
-    ResearchResult.objects.filter(project__workspace=workspace, deleted_at__isnull=True).update(
-        deleted_at=now
-    )
-    ResearchProject.objects.filter(workspace=workspace, deleted_at__isnull=True).update(
-        deleted_at=now
-    )
-    Project.objects.filter(workspace=workspace, deleted_at__isnull=True).update(deleted_at=now)
-    Workspace.objects.filter(pk=workspace.pk).update(deleted_at=now)
+    soft_delete_workspace_cascade(workspace)
     messages.success(request, f"Workspace „{workspace.name}“ wurde gelöscht.")
     return redirect("research:workspace-list")
 
@@ -379,12 +375,7 @@ def project_delete(request: HttpRequest, project_id: str) -> HttpResponse:
         ).select_related("workspace"),
         public_id=project_id,
     )
-    now = timezone.now()
-    ResearchResult.objects.filter(project__project=project, deleted_at__isnull=True).update(
-        deleted_at=now
-    )
-    ResearchProject.objects.filter(project=project, deleted_at__isnull=True).update(deleted_at=now)
-    Project.objects.filter(pk=project.pk).update(deleted_at=now)
+    soft_delete_project(project)
     messages.success(request, f"Projekt „{project.name}“ wurde gelöscht.")
     return redirect(project.workspace.get_absolute_url())
 
@@ -400,9 +391,7 @@ def research_delete(request: HttpRequest, public_id: str) -> HttpResponse:
         ).select_related("project"),
         public_id=public_id,
     )
-    now = timezone.now()
-    ResearchResult.objects.filter(project=research, deleted_at__isnull=True).update(deleted_at=now)
-    ResearchProject.objects.filter(pk=research.pk).update(deleted_at=now)
+    soft_delete_research(research)
     messages.success(request, f"Recherche „{research.name}“ wurde gelöscht.")
     if research.project:
         return redirect(research.project.get_absolute_url())

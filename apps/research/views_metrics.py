@@ -198,8 +198,10 @@ def _research_metrics() -> dict:
     """Research project counts by status."""
     from apps.research.models import ResearchProject
 
+    # all_objects: historical totals deliberately include soft-deleted rows,
+    # so the default manager's alive-only filter must not silently shrink them.
     by_status = dict(
-        ResearchProject.objects.values_list("status")
+        ResearchProject.all_objects.values_list("status")
         .annotate(c=Count("id"))
         .values_list("status", "c")
     )
