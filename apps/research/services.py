@@ -302,7 +302,7 @@ class ResearchProjectService:
 
         Resolution order (ADR-146):
           1. DB: promptfw.contrib.django.render_prompt() — cached
-          2. Inline: f-string fallback (legacy)
+          2. Seed YAML: config.prompt_fallback (same source that seeds the DB)
         """
         # Quellen-Kontext aufbauen
         source_lines = []
@@ -327,51 +327,30 @@ class ResearchProjectService:
             "es": "Español",
         }.get(lang, lang)
 
-        # 1. Try DB-backed prompt (ADR-146)
+        # Prompt resolution (ADR-146): DB first, else the canonical seed YAML.
+        # No hand-maintained inline copy — see config.prompt_fallback.
+        prompt_context = dict(
+            query=project.query,
+            summary=result.summary,
+            findings_text=findings_text,
+            sources_text=sources_text,
+            source_count=len(result.sources_json),
+            lang_name=lang_name,
+        )
         messages = None
         try:
             from promptfw.contrib.django import render_prompt as db_render_prompt
 
-            messages = db_render_prompt(
-                "research-hub.research.deep-analysis",
-                query=project.query,
-                summary=result.summary,
-                findings_text=findings_text,
-                sources_text=sources_text,
-                source_count=len(result.sources_json),
-                lang_name=lang_name,
-            )
+            messages = db_render_prompt("research-hub.research.deep-analysis", **prompt_context)
         except Exception:
-            pass  # fall through to inline
+            pass  # fall through to YAML fallback
 
-        # 2. Inline fallback (legacy)
         if not messages:
-            prompt = f"""Du bist ein erfahrener Forschungsanalyst.
+            from config.prompt_fallback import render_seed_messages
 
-Du erhältst die Ergebnisse einer Recherche zum Thema:
-"{project.query}"
-
-== ZUSAMMENFASSUNG (Stufe 1) ==
-{result.summary}
-
-== FINDINGS ==
-{findings_text}
-
-== QUELLEN ({len(result.sources_json)}) ==
-{sources_text}
-
-Erstelle eine **Tiefenanalyse** auf {lang_name}:
-
-1. **Kernaussagen** — Die 3-5 wichtigsten Erkenntnisse
-2. **Analyse** — Bewertung, Widersprüche, \
-Stärken/Schwächen der Quellen
-3. **Wissenslücken** — Was fehlt, offene Fragen
-4. **Methodische Einordnung** — Qualität der Quellenbasis
-5. **Handlungsempfehlungen** — Konkrete nächste Schritte
-
-Schreibe in Markdown. Sei analytisch, kritisch, präzise.
-"""
-            messages = [{"role": "user", "content": prompt}]
+            messages = render_seed_messages("research-hub.research.deep-analysis", **prompt_context)
+        if not messages:
+            return ""  # neither DB nor seed YAML available — skip deep analysis
 
         llm_result = await aifw.completion(
             action_code=ACTION_DEEP_ANALYSIS,
