@@ -10,7 +10,7 @@ metadata:
     deployment/path: "/opt/research-hub"
     deployment/port: "8098"
     deployment/health-url: "https://research.iil.pet/livez/"
-    deployment/image: "ghcr.io/achimdehnert/research-hub/research-hub-web:latest"
+    deployment/image: "ghcr.io/achimdehnert/research-hub:latest"
     deployment/compose-service: "research-hub-web"
     deployment/db-container: "research_hub_db"
     deployment/db-name: "research_hub"
