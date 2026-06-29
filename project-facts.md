@@ -44,7 +44,7 @@
 
 - **Prod-URL**: `research.iil.pet`
 - **Staging-URL**: `staging.research.iil.pet`
-- **Port**: `8104`
+- **Port**: `8098`
 - **Health-Endpoint**: `/livez/`
 - **DB-Name**: `research_hub`
 
