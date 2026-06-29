@@ -1,4 +1,10 @@
 # syntax=docker/dockerfile:1
+#
+# KANONISCHES PROD/CI-IMAGE. Gebaut von shared-ci `_deploy-unified.yml`
+# (dockerfile_path default = ./Dockerfile, context = .). Braucht das BuildKit-
+# Secret PROJECT_PAT (private Repo-Deps). Healthcheck pro Service in
+# docker-compose.prod.yml (ADR-078), build-safe settings (ADR-083).
+# Der lokale Dev-Stack nutzt stattdessen docker/Dockerfile — NICHT hierher zeigen.
 FROM python:3.12-slim
 
 ARG APP_NAME=research-hub
