@@ -8,7 +8,11 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.research.models import ResearchProject, ResearchResult
-from apps.research.services import ResearchProjectService, _tenant_int
+from apps.research.services import (
+    ResearchProjectService,
+    _bump_content_version,
+    _tenant_int,
+)
 
 User = get_user_model()
 
@@ -19,6 +23,23 @@ def test_should_map_tenant_uuid_to_stable_signed_bigint():
     val = _tenant_int(u)
     assert val == _tenant_int(u)  # deterministic
     assert 0 <= val <= 0x7FFF_FFFF_FFFF_FFFF  # fits signed BigIntegerField
+
+
+@pytest.mark.f1
+def test_should_start_content_version_at_1_for_new_row():
+    assert _bump_content_version(None, None, "abc") == 1
+
+
+@pytest.mark.f1
+def test_should_keep_content_version_when_sha_unchanged():
+    # Republish with identical content → no version churn (ADR-130).
+    assert _bump_content_version(3, "sha-same", "sha-same") == 3
+
+
+@pytest.mark.f1
+def test_should_increment_content_version_when_content_changed():
+    # Regression guard for hardcoded version=1 (reset every republish to 1).
+    assert _bump_content_version(3, "sha-old", "sha-new") == 4
 
 
 def test_should_not_collide_on_uuids_sharing_first_32_bits():
