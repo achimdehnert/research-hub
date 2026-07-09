@@ -72,6 +72,30 @@ def _make_aifw_llm_fn(action_code: str = ACTION_SUMMARIZE):
     return _call
 
 
+def _bump_content_version(
+    existing_version: int | None,
+    existing_sha: str | None,
+    new_sha: str,
+) -> int:
+    """Compute the content-store ``version`` for a summary/deep-analysis row (ADR-130).
+
+    ``ContentItem`` rows are keyed on ``(source, type, ref_id)`` and updated in
+    place via ``update_or_create``, so ``version`` must be derived from the current
+    row — not hardcoded.  The previous ``version=1`` in the ``defaults`` reset every
+    republish back to 1 (defaults apply on the UPDATE path too), silently defeating
+    the cross-hub versioning ADR-130 relies on.
+
+    - No existing row → 1.
+    - Content unchanged (sha256 identical) → keep the current version.
+    - Content changed → previous version + 1.
+    """
+    if existing_version is None:
+        return 1
+    if existing_sha == new_sha:
+        return existing_version
+    return existing_version + 1
+
+
 def _publish_to_content_store(
     project: ResearchProject,
     result: ResearchResult,
@@ -100,6 +124,17 @@ def _publish_to_content_store(
         sha = hashlib.sha256(
             result.summary.encode(),
         ).hexdigest()
+        existing = (
+            ContentItem.objects.using(db)
+            .filter(source="research-hub", type="summary", ref_id=ref)
+            .values("version", "sha256")
+            .first()
+        )
+        version = _bump_content_version(
+            existing["version"] if existing else None,
+            existing["sha256"] if existing else None,
+            sha,
+        )
         ContentItem.objects.using(db).update_or_create(
             source="research-hub",
             type="summary",
@@ -108,7 +143,7 @@ def _publish_to_content_store(
                 "tenant_id": tenant_id,
                 "content": result.summary,
                 "sha256": sha,
-                "version": 1,
+                "version": version,
                 "meta": {
                     "query": project.query,
                     "language": project.language,
@@ -132,6 +167,17 @@ def _publish_to_content_store(
         sha = hashlib.sha256(
             result.deep_analysis.encode(),
         ).hexdigest()
+        existing = (
+            ContentItem.objects.using(db)
+            .filter(source="research-hub", type="deep_analysis", ref_id=ref)
+            .values("version", "sha256")
+            .first()
+        )
+        version = _bump_content_version(
+            existing["version"] if existing else None,
+            existing["sha256"] if existing else None,
+            sha,
+        )
         ContentItem.objects.using(db).update_or_create(
             source="research-hub",
             type="deep_analysis",
@@ -140,7 +186,7 @@ def _publish_to_content_store(
                 "tenant_id": tenant_id,
                 "content": result.deep_analysis,
                 "sha256": sha,
-                "version": 1,
+                "version": version,
                 "meta": {
                     "query": project.query,
                     "language": project.language,
