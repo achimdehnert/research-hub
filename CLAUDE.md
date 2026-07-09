@@ -41,6 +41,16 @@ Weitere URL-Mounts: `billing/modules/` (`django_module_shop`), `oidc/`,
 `base.py` · `production.py` · `test.py` · `build.py`. Default Test: `config.settings.test`
 (in `pyproject.toml` gepinnt). Prod: `config.settings.production`.
 
+### Zweite DB `content_store` (Cross-Host, ADR-130)
+Neben der App-DB konfiguriert `base.py:114-123` eine **zweite Postgres-Verbindung**
+`content_store` + `DATABASE_ROUTERS = ["content_store.router.ContentStoreRouter"]`. Das ist
+der **dev-hub-eigene Content-Store**, geteilt über Hubs hinweg.
+- Default-Host `devhub_db`; in Prod via `docker-compose.prod.yml` `extra_hosts: devhub_db:172.17.0.1`
+  (Docker-Bridge-Gateway zum dev-hub-Stack). Env: `CONTENT_STORE_DB_{NAME,USER,PASSWORD,HOST,PORT}`.
+- **Fail-open:** Fehlt das Paket/die DB, degradiert der Code still — `apps/research/services.py`
+  (`_publish_to_content_store`) und `apps/research/views_metrics.py` fangen `ImportError` und loggen
+  `content_store not available, skipping`. Lokal/CI ohne content_store ⇒ kein Defekt, nur kein Publish.
+
 ## Lokal hochfahren & testen
 
 ```bash
@@ -74,4 +84,5 @@ docker compose -f docker/docker-compose.test.yml down
 ## Bekannte Stolperfallen für Agenten
 
 - `.windsurf/` (Rules + Workflows) ist **`.gitignore`'d + symlinked** → in einem frischen Clone nicht vorhanden. Diese `CLAUDE.md` ist die getrackte SSoT.
+- **`project-facts.md` „Lokale Umgebung" (Pfad `~/CascadeProjects/...`, Venv) zielt auf den Lead-Dev-Desktop, NICHT auf diesen Host.** Maßgeblich für „dieser Host" ist die Tabelle oben (`~/github/research-hub`). project-facts wird aus platform-SSoT generiert (`/sync-project-facts`) — nicht von Hand korrigieren.
 - **Zwei `Dockerfile` mit klaren Rollen** (Banner am Dateikopf): **root `./Dockerfile` = kanonisch Prod/CI** (shared-ci `_deploy-unified`, braucht `PROJECT_PAT`-BuildKit-Secret); **`docker/Dockerfile` = nur lokaler Dev-Stack** (`docker/docker-compose.yml`). Beim Anpassen die richtige erwischen.

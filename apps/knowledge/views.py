@@ -166,10 +166,11 @@ def outline_webhook(request):
     # Dedup: skip if same doc processed within TTL
     # Outline fires create+publish simultaneously
     dedup_key = f"outline_wh:{doc_id}"
-    if cache.get(dedup_key):
+    # Atomic check-and-set (cache.add) — get()+set() is a TOCTOU race when Outline
+    # fires create+publish simultaneously; same pattern as _rate_limited above.
+    if not cache.add(dedup_key, 1, DEDUP_TTL):
         logger.debug("Outline webhook: dedup skip %s %s", event, doc_id)
         return JsonResponse({"status": "dedup", "event": event})
-    cache.set(dedup_key, 1, DEDUP_TTL)
 
     if event in ("documents.delete", "documents.archive"):
         delete_knowledge_document_task.delay(str(doc_id))
