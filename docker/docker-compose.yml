@@ -7,7 +7,10 @@ services:
       dockerfile: docker/Dockerfile
     container_name: research_hub_web
     ports:
-      - "8095:8000"
+      # Kanonischer research-hub-Port 8098 (platform #721: nginx proxy_pass +
+      # docker-compose.prod.yml:70 + 4 Registries). Vorher 8095 = einziger Ausreißer,
+      # ließ den in CLAUDE.md dokumentierten `curl :8098` gegen den lokalen Stack scheitern.
+      - "8098:8000"
     env_file:
       - ../.env
     depends_on:
