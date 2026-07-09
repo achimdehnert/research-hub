@@ -6,6 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  ci:
+    uses: iilgmbh/shared-ci/.github/workflows/_ci-python.yml@v1.0.5
+    with:
+      skip_tests: true
+      django_settings_module: "config.settings.test"
+    secrets: inherit
+
   test:
     runs-on: ubuntu-latest
 
