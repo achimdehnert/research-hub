@@ -36,9 +36,85 @@ jobs:
       django_settings_module: "config.settings.test"
     secrets: inherit
 
+  # F3: main wird vor dem Deploy real getestet. Der shared-ci `ci`-Job oben läuft mit
+  # `skip_tests: true` (validiert Build/Secrets, nicht Tests); `ci.yml` triggert nur auf
+  # pull_request → ein Push/Merge auf main ging bisher UNGETESTET nach Prod.
+  # Dieser Job spiegelt `ci.yml` exakt (bewusste Duplikat statt shared-ci `skip_tests:false`:
+  # shared-ci provisioniert Postgres über POSTGRES_*, config.settings.test liest aber
+  # TEST_DB_* + CONTENT_STORE_DB_* / zwei DBs — naives Umschalten blockiert jeden Deploy).
+  # Nur echte Branch-Pushes (Merge auf main) werden gegated. Tag-Pushes (Release) und
+  # workflow_dispatch (Notfall-Rollback via image_tag_override) überspringen den Test →
+  # deploy erlaubt `skipped`, damit ein Rollback nicht an roten main-Tests hängen bleibt.
+  test:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/')
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_NAME: ci_test
+      DB_USER: ci
+      DB_PASSWORD: ci
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_test
+      # config.settings.test liest TEST_DB_* (überschreibt base DATABASES)
+      TEST_DB_NAME: ci_test
+      TEST_DB_USER: ci
+      TEST_DB_PASSWORD: ci
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: "5432"
+      CONTENT_STORE_DB_NAME: ci_test
+      CONTENT_STORE_DB_USER: ci
+      CONTENT_STORE_DB_PASSWORD: ci
+      CONTENT_STORE_DB_HOST: localhost
+      CONTENT_STORE_DB_PORT: "5432"
+      SECRET_KEY: ci-test-key
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure git for private packages
+        run: |
+          if [ -n "${{ secrets.PROJECT_PAT }}" ]; then
+            git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+          fi
+
+      - name: Install vendored wheels
+        run: |
+          if [ -d wheels/ ] && ls wheels/*.whl 1>/dev/null 2>&1; then
+            pip install wheels/*.whl
+          fi
+
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install -r requirements/dev.txt
+
+      - name: Run tests
+        run: python -m pytest --tb=short -q
+
   deploy:
-    needs: [ci]
-    if: always() && (needs.ci.result == 'success' || needs.ci.result == 'skipped')
+    needs: [ci, test]
+    if: >-
+      always()
+      && (needs.ci.result == 'success' || needs.ci.result == 'skipped')
+      && (needs.test.result == 'success' || needs.test.result == 'skipped')
     uses: iilgmbh/shared-ci/.github/workflows/_deploy-unified.yml@v1.0.8
     with:
       app_name: "research-hub"
