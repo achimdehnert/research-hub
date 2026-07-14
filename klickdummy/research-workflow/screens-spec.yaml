@@ -1,0 +1,101 @@
+# =============================================================================
+# I1 Spec-first artifact — Klickdummy Research-Workflow (research-hub CORE)
+# Brownfield-Extraktion aus apps/research (kein separates Konzept-Dokument).
+# =============================================================================
+
+$schema: https://raw.githubusercontent.com/achimdehnert/platform/main/packages/iil-klickdummy/src/iil_klickdummy/schemas/screens-spec.schema.json
+spec_id: research-hub:klickdummy-spec-research-workflow
+spec_version: "0.1"
+spec_schema_version: "1.1"
+spec_date: "2026-07-14"
+title: "Research-Workflow — Klickdummy (CORE-Modul)"
+
+adr:
+  local: research-hub:ADR-001
+  conforms_to: platform:ADR-211
+  sister_of: []
+
+class: spec-demo
+class_evidence:
+  demo_query_param: "?demo=on"
+  prod_guard_env_flag: "KLICKDUMMY_DEMO_ENABLED"
+  prod_guard_rule: >-
+    Demo-Render nur aktiv wenn KLICKDUMMY_DEMO_ENABLED=True UND settings.DEBUG=True.
+    config/settings/production.py setzt DEBUG hart auf False (Zeile 7) — zusätzliche
+    Absicherung selbst falls KLICKDUMMY_DEMO_ENABLED versehentlich in Prod gesetzt würde.
+  systemgrenzen:
+    - "Workspace-Datenquelle"
+    - "Research-Ausführungs-Adapter"
+
+off_ramp:
+  policy: platform:ADR-211 Static→Echt-Migrationspfad
+  unit: per-screen
+  rule: "Parity-grün pro Screen ⇒ Screen aus statischer Quelle entfernen"
+  doppelquell_grenze: prod-release
+  parity_runner: make klickdummy-i3
+
+grounding:
+  konzept: "apps/research/models.py, apps/research/views.py — Brownfield-Extraktion, kein separates Konzept-Dokument"
+  pilot: "Workspace→Project→ResearchProject-Hierarchie ist der Produkt-Wertkern — /kd-scout research-hub Kandidat A, 2026-07-14"
+
+auth:
+  required: true
+  # Alle Workspace/Project-Views tragen LoginRequiredMixin (apps/research/views.py:46,56,70,95).
+
+personas:
+  researcher:
+    label: "Researcher/in"
+    rolle: "researcher"
+    sieht:
+      - workspace-uebersicht
+      - research-anlegen
+      - research-status
+
+screens:
+  - id: workspace-uebersicht
+    title: "Workspace-Übersicht"
+    personas: [researcher]
+    purpose: "Researcher sieht alle eigenen Workspaces mit Anzahl laufender Research-Projekte."
+    datafields:
+      - { name: name, type: string, source: "apps.research.Workspace.name" }
+      - { name: description, type: string, source: "apps.research.Workspace.description" }
+      - { name: research_count, type: integer, source: "apps.research.views.WorkspaceListView", semantic: "Anzahl ResearchProject je Workspace, berechnet" }
+    target_mocks:
+      - "Workspace-Datenquelle"
+    parity_acceptance:
+      - id: workspace-uebersicht.research-count-berechnet
+        check: "research_count je Workspace entspricht count(ResearchProject mit workspace_id=X über alle zugehörigen Projects), berechnet, nicht literal"
+    off_ramp_status: static
+
+  - id: research-anlegen
+    title: "Research-Projekt anlegen"
+    personas: [researcher]
+    purpose: "Researcher formuliert eine Recherche-Anfrage mit Tiefe, Sprache und Zitationsstil."
+    datafields:
+      - { name: name, type: string, source: "apps.research.ResearchProject.name", semantic: "Pflichtfeld" }
+      - { name: query, type: string, source: "apps.research.ResearchProject.query", semantic: "Pflichtfeld" }
+      - { name: depth, type: enum, source: "apps.research.ResearchProject.depth", semantic: "Default 'standard'" }
+      - { name: language, type: string, source: "apps.research.ResearchProject.language", semantic: "Default 'de'" }
+      - { name: citation_style, type: enum, source: "apps.research.ResearchProject.citation_style" }
+    target_mocks:
+      - "Workspace-Datenquelle"
+    parity_acceptance:
+      - id: research-anlegen.pflichtfelder
+        check: "name und query sind Pflichtfelder, Formular blockiert Absenden ohne beide"
+      - id: research-anlegen.status-startet-draft
+        check: "Neu angelegtes Research-Projekt hat status='draft', nie direkt 'running'"
+    off_ramp_status: static
+
+  - id: research-status
+    title: "Research-Status verfolgen"
+    personas: [researcher]
+    purpose: "Researcher verfolgt den Fortschritt eines Research-Projekts durch die Status-Pipeline."
+    datafields:
+      - { name: status, type: enum, source: "apps.research.ResearchProject.status", semantic: "draft | running | analysing | done | error" }
+      - { name: use_deep_analysis, type: boolean, source: "apps.research.ResearchProject.use_deep_analysis" }
+    target_mocks:
+      - "Research-Ausführungs-Adapter"
+    parity_acceptance:
+      - id: research-status.pipeline-reihenfolge
+        check: "Status durchläuft draft → running → analysing → done (oder error), niemals ein Sprung draft → done ohne running/analysing"
+    off_ramp_status: static
