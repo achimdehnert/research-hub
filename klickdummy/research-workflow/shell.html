@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>research-hub · Research-Workflow — Klick-Dummy v0.1 (Draft)</title>
+<!--
+  spec-demo (class: spec-demo) — Klickdummy zu research-hub:ADR-001, Spec
+  klickdummy/research-workflow/screens-spec.yaml. Brownfield-Extraktion aus
+  apps/research (CORE-Modul).
+  ADR-048/049: --pui-*-Tokens statt Hex, addEventListener statt onclick,
+  data-testid an jedem interaktiven Element (Parity-Anker der Spec).
+-->
+<style>
+  :root {
+    --pui-primary:    #17607a;
+    --pui-surface:    #f5fafb;
+    --pui-surface-2:  #ffffff;
+    --pui-border:     #d3e5ea;
+    --pui-muted:      #5b7480;
+    --pui-success:    #1f7a3d;
+    --pui-success-bg: #e3f5e9;
+    --pui-warning:    #8a5a00;
+    --pui-warning-bg: #fdf0d6;
+    --pui-danger:     #a3231f;
+    --pui-danger-bg:  #fbe3e2;
+    --pui-neutral:    #5b7480;
+    --pui-neutral-bg: #e7eef0;
+    --pui-space-1: 4px;
+    --pui-space-2: 8px;
+    --pui-space-3: 12px;
+    --pui-space-4: 16px;
+    --pui-space-6: 24px;
+    --pui-radius:    6px;
+    --pui-radius-lg: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; color: #1a2a2e; background: var(--pui-surface); }
+  header { background: var(--pui-primary); color: #fff; padding: var(--pui-space-3) var(--pui-space-6); display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .badge-demo { font-size: 11px; background: rgba(255,255,255,.18); padding: 2px 8px; border-radius: 10px; }
+  nav { display: flex; gap: var(--pui-space-2); background: var(--pui-surface-2); padding: var(--pui-space-2) var(--pui-space-6); border-bottom: 1px solid var(--pui-border); flex-wrap: wrap; }
+  nav button { font: inherit; font-size: 13px; padding: var(--pui-space-2) var(--pui-space-3); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); color: var(--pui-muted); cursor: pointer; }
+  nav button[aria-current="true"] { background: var(--pui-primary); border-color: var(--pui-primary); color: #fff; font-weight: 600; }
+  main { max-width: 960px; margin: 0 auto; padding: var(--pui-space-6); }
+  section[data-screen] { display: none; }
+  section[data-screen].active { display: block; }
+  h2 { font-size: 20px; margin: 0 0 var(--pui-space-1); color: var(--pui-primary); }
+  .purpose { color: var(--pui-muted); font-size: 13px; margin: 0 0 var(--pui-space-4); }
+  .panel { background: var(--pui-surface-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius-lg); padding: var(--pui-space-4); margin-bottom: var(--pui-space-4); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: var(--pui-space-2) var(--pui-space-3); border-bottom: 1px solid var(--pui-border); }
+  th { color: var(--pui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  tr[data-row]:hover { background: var(--pui-surface); cursor: pointer; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge.draft { background: var(--pui-neutral-bg); color: var(--pui-neutral); }
+  .badge.running, .badge.analysing { background: var(--pui-warning-bg); color: var(--pui-warning); }
+  .badge.done { background: var(--pui-success-bg); color: var(--pui-success); }
+  .badge.error { background: var(--pui-danger-bg); color: var(--pui-danger); }
+  label { display: block; font-size: 12px; color: var(--pui-muted); margin: var(--pui-space-3) 0 var(--pui-space-1); font-weight: 600; }
+  input, select, textarea { width: 100%; font: inherit; font-size: 13px; padding: var(--pui-space-2); border: 1px solid var(--pui-border); border-radius: var(--pui-radius); background: var(--pui-surface-2); }
+  textarea { min-height: 64px; resize: vertical; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pui-space-3); }
+  button.primary { font: inherit; font-size: 13px; font-weight: 600; padding: var(--pui-space-2) var(--pui-space-4); border: none; border-radius: var(--pui-radius); background: var(--pui-primary); color: #fff; cursor: pointer; margin-top: var(--pui-space-4); }
+  button.primary:disabled { opacity: .45; cursor: not-allowed; }
+  .kv dt { font-size: 11px; color: var(--pui-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: var(--pui-space-3); }
+  .kv dd { margin: 2px 0 0; font-size: 14px; }
+  .note { color: var(--pui-muted); font-size: 11px; margin-top: var(--pui-space-4); }
+  .progress { display: flex; gap: 4px; margin-top: var(--pui-space-3); }
+  .progress-step { flex: 1; height: 6px; border-radius: 3px; background: var(--pui-neutral-bg); }
+  .progress-step.active { background: var(--pui-primary); }
+</style>
+</head>
+<body data-persona="researcher">
+
+<header>
+  <h1>research-hub · Research-Workflow</h1>
+  <span class="badge-demo">spec-demo · Researcher</span>
+</header>
+
+<nav>
+  <button type="button" data-nav="workspace-uebersicht" data-testid="nav-workspace-uebersicht" aria-current="true">Workspaces</button>
+  <button type="button" data-nav="research-anlegen" data-testid="nav-research-anlegen">+ Research anlegen</button>
+</nav>
+
+<main>
+
+  <!-- ============================ WORKSPACE-ÜBERSICHT ============================ -->
+  <section data-screen="workspace-uebersicht" class="active">
+    <h2>Workspace-Übersicht</h2>
+    <p class="purpose">Alle eigenen Workspaces mit Anzahl laufender Research-Projekte.</p>
+
+    <div class="panel">
+      <table data-testid="workspaces-tabelle">
+        <thead><tr><th>Name</th><th>Beschreibung</th><th>Research-Projekte</th></tr></thead>
+        <tbody id="workspaces-tbody">
+          <tr data-row data-testid="workspace-row-marktanalyse" data-workspace="marktanalyse">
+            <td>Marktanalyse Q3</td><td>Wettbewerbsbeobachtung DACH-Raum</td>
+            <td><span data-testid="research-count">4</span></td>
+          </tr>
+          <tr data-row data-testid="workspace-row-produktrecherche" data-workspace="produktrecherche">
+            <td>Produktrecherche</td><td>Feature-Vergleich Konkurrenzprodukte</td>
+            <td><span data-testid="research-count">1</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.research.views.WorkspaceListView (/workspaces/) — research_count berechnet aus count(ResearchProject je Workspace).</p>
+  </section>
+
+  <!-- ============================ RESEARCH ANLEGEN ============================ -->
+  <section data-screen="research-anlegen">
+    <h2>Research-Projekt anlegen</h2>
+    <p class="purpose">Recherche-Anfrage formulieren — Tiefe, Sprache und Zitationsstil festlegen.</p>
+
+    <div class="panel">
+      <label for="ra-name">Name *</label>
+      <input id="ra-name" data-testid="research-anlegen-name" required>
+
+      <label for="ra-query">Recherche-Frage *</label>
+      <textarea id="ra-query" data-testid="research-anlegen-query" required></textarea>
+
+      <div class="row-2">
+        <div>
+          <label for="ra-depth">Tiefe</label>
+          <select id="ra-depth" data-testid="research-anlegen-depth">
+            <option value="quick">Quick</option>
+            <option value="standard" selected>Standard</option>
+            <option value="deep">Deep</option>
+          </select>
+        </div>
+        <div>
+          <label for="ra-citation">Zitationsstil</label>
+          <select id="ra-citation" data-testid="research-anlegen-citation">
+            <option value="none">Keiner</option>
+            <option value="apa">APA</option>
+            <option value="chicago">Chicago</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" class="primary" id="ra-submit" data-testid="research-anlegen-speichern" disabled>Research anlegen</button>
+      <div id="ra-result" style="margin-top:12px"></div>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.research.views.ResearchCreateView (/research/create/) — Pflichtfelder name + query, status startet immer bei 'draft'.</p>
+  </section>
+
+  <!-- ============================ RESEARCH-STATUS ============================ -->
+  <section data-screen="research-status">
+    <h2>Research-Status verfolgen</h2>
+    <p class="purpose">Fortschritt eines Research-Projekts durch die Status-Pipeline verfolgen.</p>
+
+    <div class="panel">
+      <dl class="kv">
+        <dt>Status</dt><dd><span class="badge draft" id="rs-status-badge" data-testid="research-status-badge">Draft</span></dd>
+      </dl>
+      <div class="progress" data-testid="research-status-progress">
+        <div class="progress-step" data-step="draft"></div>
+        <div class="progress-step" data-step="running"></div>
+        <div class="progress-step" data-step="analysing"></div>
+        <div class="progress-step" data-step="done"></div>
+      </div>
+      <button type="button" class="primary" id="rs-start" data-testid="research-status-start">Research starten</button>
+    </div>
+    <p class="note">Mock-Daten. Real: apps.research.views.ResearchStatusView (/research/&lt;id&gt;/status/) — Status-Pipeline serverseitig getrieben: draft → running → analysing → done (oder error), kein Sprung.</p>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  function activateScreen(id) {
+    document.querySelectorAll("section[data-screen]").forEach(function (s) {
+      s.classList.toggle("active", s.dataset.screen === id);
+    });
+    document.querySelectorAll("nav button[data-nav]").forEach(function (b) {
+      b.setAttribute("aria-current", String(b.dataset.nav === id));
+    });
+  }
+
+  document.querySelectorAll("nav button[data-nav]").forEach(function (btn) {
+    btn.addEventListener("click", function () { activateScreen(btn.dataset.nav); });
+  });
+
+  // ---- Workspace-Übersicht → Research-Status ----
+  document.querySelectorAll('#workspaces-tbody tr[data-row]').forEach(function (row) {
+    row.addEventListener("click", function () { activateScreen("research-status"); });
+  });
+
+  // ---- Research anlegen: Pflichtfeld-Gate ----
+  var name = document.getElementById("ra-name");
+  var query = document.getElementById("ra-query");
+  var submit = document.getElementById("ra-submit");
+  function checkPflichtfelder() {
+    submit.disabled = !(name.value.trim() && query.value.trim());
+  }
+  [name, query].forEach(function (el) { el.addEventListener("input", checkPflichtfelder); });
+  submit.addEventListener("click", function () {
+    document.getElementById("ra-result").innerHTML =
+      '<span class="badge draft">✓ Research „' + name.value + '“ angelegt — Status: draft (Mock)</span>';
+  });
+
+  // ---- Research-Status: Pipeline draft → running → analysing → done ----
+  var PIPELINE = ["draft", "running", "analysing", "done"];
+  var LABELS = { draft: "Draft", running: "Running", analysing: "Analysing", done: "Done" };
+  var idx = 0;
+
+  function renderStep() {
+    var status = PIPELINE[idx];
+    var badge = document.getElementById("rs-status-badge");
+    badge.textContent = LABELS[status];
+    badge.className = "badge " + status;
+    document.querySelectorAll(".progress-step").forEach(function (el, i) {
+      el.classList.toggle("active", i <= idx);
+    });
+  }
+
+  document.getElementById("rs-start").addEventListener("click", function () {
+    var btn = document.getElementById("rs-start");
+    btn.disabled = true;
+    var interval = setInterval(function () {
+      idx += 1;
+      renderStep();
+      if (idx >= PIPELINE.length - 1) {
+        clearInterval(interval);
+        btn.disabled = false;
+        btn.textContent = "Erneut starten";
+      }
+    }, 700);
+  });
+})();
+</script>
+
+</body>
+</html>
