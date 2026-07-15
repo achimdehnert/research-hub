@@ -4,7 +4,7 @@
 # Dieser Makefile enthält bewusst NUR die Klickdummy-Targets (platform:ADR-211)
 # — keine Nachbildung der bestehenden CI-Pipeline, um Scope klein zu halten.
 
-.PHONY: klickdummy klickdummy-install klickdummy-i1 klickdummy-i2 klickdummy-i3
+.PHONY: klickdummy klickdummy-install klickdummy-i1 klickdummy-i2 klickdummy-i3 klickdummy-sitemap
 
 PYTHON := python3
 
@@ -29,3 +29,6 @@ klickdummy-i2: ## I2 Prod-Sicherheit — genau eine class deklariert (zentral)
 
 klickdummy-i3: ## I3 Off-Ramp — sunset/Status (zentral)
 	@$(KLICKDUMMY_VENV)/bin/klickdummy-i3 $(KLICKDUMMIES)
+
+klickdummy-sitemap: ## KD-Sitemap + kd-tree.json neu generieren
+	@$(KLICKDUMMY_VENV)/bin/klickdummy-gen-sitemap . research-hub:ADR-001 research-hub
